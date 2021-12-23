@@ -6,7 +6,8 @@ from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from config_reader import load_config
-from handlers.event_guest import register_faneron_users_handler
+from handlers.event_guest import register_faneron_users_handler, register_delayed_checkin
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,6 +36,8 @@ async def main():
 
     # Регистрация хэндлеров
     register_faneron_users_handler(dp, config.tg_bot.admin_id)
+    register_delayed_checkin(dp)
+
 
     # Установка команд бота
     await set_commands(bot)
