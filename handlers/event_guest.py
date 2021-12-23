@@ -93,7 +93,8 @@ async def get_review(message: types.Message, state: FSMContext):
     await state.update_data(review=message.text)
     await state.update_data(tg_id=message.from_user.id)
     user_data = await state.get_data()
-    await message.answer(f"Спасибо за комменты")
+    await message.answer(f"Спасибо за комменты. Твой стэйт {user_data}")
+
     await state.finish()
 
 
@@ -106,7 +107,7 @@ def register_faneron_users_handler(dp: Dispatcher, admin_id: int):
     dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)
 
 
-def register_delayed_checkin(dp: Dispatcher):
-    dp.register_message_handler(delayed_registration, command='check', state=FaneronUsers.init_state)
+# def register_delayed_checkin(dp: Dispatcher):
+#     dp.register_message_handler(delayed_registration, command='check', state=FaneronUsers.init_state)
 
 

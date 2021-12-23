@@ -1,15 +1,17 @@
 import asyncio
 import logging
+import aioredis
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
 from config_reader import load_config
-from handlers.event_guest import register_faneron_users_handler, register_delayed_checkin
+from handlers.event_guest import register_faneron_users_handler
 
 logger = logging.getLogger(__name__)
-
+storage = RedisStorage2('localhost', 6379, db=5, pool_size=10, prefix='my_fsm_key')
 
 async def set_commands(bot: Bot):
     commands = [
@@ -32,11 +34,12 @@ async def main():
 
     # Объявление и инициализация объектов бота и диспетчера
     bot = Bot(token=config.tg_bot.token)
-    dp = Dispatcher(bot, storage=MemoryStorage())
+    # dp = Dispatcher(bot, storage=MemoryStorage())
+    dp = Dispatcher(bot, storage=storage)
 
     # Регистрация хэндлеров
     register_faneron_users_handler(dp, config.tg_bot.admin_id)
-    register_delayed_checkin(dp)
+    # register_delayed_checkin(dp)
 
 
     # Установка команд бота
