@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import IDFilter
@@ -86,13 +88,17 @@ async def city_chosen(message: types.Message, state: FSMContext):
         return
     await state.update_data(city=message.text.lower())
     await FaneronUsers.next()
-    await message.answer(f'черкани пару строк про эвент.', reply_markup=types.ReplyKeyboardRemove())
+    await message.answer(f'черкани пару строк про эвент. если есть интеренсые фото, присылай.', reply_markup=types.ReplyKeyboardRemove())
+
+
+photo_dir = "photos/"
 
 
 async def get_review(message: types.Message, state: FSMContext):
     await state.update_data(review=message.text)
     await state.update_data(tg_id=message.from_user.id)
     user_data = await state.get_data()
+    await message.photo[-1].download(photo_dir)
     await message.answer(f"Спасибо за комменты. Твой стэйт {user_data}")
 
     await state.finish()
@@ -104,7 +110,7 @@ def register_faneron_users_handler(dp: Dispatcher, admin_id: int):
     dp.register_message_handler(role_chosen, state=FaneronUsers.waiting_for_presence_accept)
     dp.register_message_handler(age_chosen, state=FaneronUsers.waiting_for_role)
     dp.register_message_handler(city_chosen, state=FaneronUsers.waiting_for_age)
-    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)
+    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city, content_types=['photo'])
 
 
 # def register_delayed_checkin(dp: Dispatcher):

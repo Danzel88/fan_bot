@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import aioredis
+# import aioredis
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
@@ -34,8 +34,8 @@ async def main():
 
     # Объявление и инициализация объектов бота и диспетчера
     bot = Bot(token=config.tg_bot.token)
-    # dp = Dispatcher(bot, storage=MemoryStorage())
-    dp = Dispatcher(bot, storage=storage)
+    dp = Dispatcher(bot, storage=MemoryStorage())
+    # dp = Dispatcher(bot, storage=storage)
 
     # Регистрация хэндлеров
     register_faneron_users_handler(dp, config.tg_bot.admin_id)
