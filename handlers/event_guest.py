@@ -1,14 +1,19 @@
 from io import BytesIO
 
+from sqlite3 import IntegrityError
+
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import IDFilter
 from aiogram.dispatcher.filters.state import State, StatesGroup
+
+from database import database as db
 
 presence = ["посетил", "подписаться на новости"]
 person_role = ["спикер", "гость", "организатор"]
 age_interval = ["16-20", "21-25", "26-30", "31-35", "36-40", "40-50", "50+"]
 city = ["москва", "другой"]
+
+photo_dir = "photos/"
 
 
 class FaneronUsers(StatesGroup):
@@ -24,37 +29,60 @@ async def init_user(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for pres in presence:
         keyboard.add(pres)
+    user_data = await db.select_user(message.from_user.id)
+    if user_data is not None:
+        if message.from_user.id == user_data[-1] and user_data[-2] is None:
+            await message.answer(f'Ты уже зарегался в боте. Что бы оставить отзыв '
+                                 f'подтверди посещение кнопкой или подпишись на новости',
+                                 reply_markup=keyboard)
+            return
+        elif user_data[1] == presence[1]:
+            accept_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            accept_kb.add(presence[0])
+            await message.answer(f'Ты уже подписан на новости. Что бы оставить отзыв, подиверди посещение кнопкой',
+                                 reply_markup=accept_kb)
+            return
+        elif user_data[-2] is None:
+            await message.answer(f'Сброшено состояние посещения')
+            await db.create_or_update_user(tg_id=message.from_user.id)
+            return
+        else:
+            await message.answer(f'Ты уже оставлял отзыв. Спасибо',
+                                 reply_markup=types.ReplyKeyboardRemove())
+            return
     await message.answer(f"Уже был на мероприятии?", reply_markup=keyboard)
     await FaneronUsers.init_state.set()
+    await db.create_user(tg_id=int(message.from_user.id))
 
 
-async def delayed_registration(message: types.Message, state: FSMContext):
-    if message.text.lower() not in presence:
-        await message.answer(f'Выбери из предложенных вариантов')
-        return
-    await state.update_data(presence=message.text.lower())
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for role in person_role:
-        keyboard.add(role)
-    await FaneronUsers.next()
-
-    await message.answer(f"В качестве кого был на мероприятии", reply_markup=keyboard)
+# async def delayed_registration(message: types.Message, state: FSMContext):
+#     await state.update_data(presence=presence[0])
+#     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+#     for role in person_role:
+#         keyboard.add(role)
+#     await FaneronUsers.next()
+#     await message.answer(f"Круто! Мы тебя ждали! В качестве кого был на мероприятии?", reply_markup=keyboard)
+#     await db.update_user(presence=presence[0], tg_id=message.from_user.id)
 
 
 async def pres_accept(message: types.Message, state: FSMContext):
     if message.text.lower() not in presence:
         await message.answer(f'Выбери из предложенных вариантов')
         return
-    elif message.text.lower() == "подписаться на новости":
-        await message.answer(f'Для того что бы оставить отзыв после посещения отправь команду (/check_in)')
-        await FaneronUsers.init_state.set()
-        return
     await state.update_data(presence=message.text.lower())
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for role in person_role:
         keyboard.add(role)
+    if message.text == presence[1]:
+        accept_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        accept_kb.add(presence[0])
+        await db.create_or_update_user(presence=message.text.lower(), tg_id=message.from_user.id)
+        await message.answer(
+            f'Ты будешь получать новости до конца мероприятия. Что бы оставить отзыв подтверди посещение кнопкой',
+            reply_markup=accept_kb)
+        return
     await FaneronUsers.next()
-
+    await db.create_or_update_user(presence=message.text.lower(), tg_id=message.from_user.id)
     await message.answer(f"В качестве кого был на мероприятии", reply_markup=keyboard)
 
 
@@ -79,7 +107,7 @@ async def age_chosen(message: types.Message, state: FSMContext):
     for c in city:
         keyboard.add(c)
     await FaneronUsers.next()
-    await message.answer(f"Ты из москвы или из лругого города", reply_markup=keyboard)
+    await message.answer(f"Ты из москвы или из другого города", reply_markup=keyboard)
 
 
 async def city_chosen(message: types.Message, state: FSMContext):
@@ -88,20 +116,22 @@ async def city_chosen(message: types.Message, state: FSMContext):
         return
     await state.update_data(city=message.text.lower())
     await FaneronUsers.next()
-    await message.answer(f'черкани пару строк про эвент. если есть интеренсые фото, присылай.', reply_markup=types.ReplyKeyboardRemove())
-
-
-photo_dir = "photos/"
+    await message.answer(f'черкани пару строк про эвент. если есть интеренсые фото, присылай.',
+                         reply_markup=types.ReplyKeyboardRemove())
 
 
 async def get_review(message: types.Message, state: FSMContext):
     await state.update_data(review=message.text)
     await state.update_data(tg_id=message.from_user.id)
     user_data = await state.get_data()
-    await message.photo[-1].download(photo_dir)
+    print(message)
+    # await message.photo[-1].download(
+    #     destination_file=f'{photo_dir}{message.from_user.id}.jpg')
     await message.answer(f"Спасибо за комменты. Твой стэйт {user_data}")
-
     await state.finish()
+    await db.update_user(presence=user_data["presence"], person_role=user_data['role'],
+                         age=user_data["age"], city=user_data["city"],
+                         review=user_data["review"], tg_id=user_data["tg_id"])
 
 
 def register_faneron_users_handler(dp: Dispatcher, admin_id: int):
@@ -110,10 +140,5 @@ def register_faneron_users_handler(dp: Dispatcher, admin_id: int):
     dp.register_message_handler(role_chosen, state=FaneronUsers.waiting_for_presence_accept)
     dp.register_message_handler(age_chosen, state=FaneronUsers.waiting_for_role)
     dp.register_message_handler(city_chosen, state=FaneronUsers.waiting_for_age)
-    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city, content_types=['photo'])
-
-
-# def register_delayed_checkin(dp: Dispatcher):
-#     dp.register_message_handler(delayed_registration, command='check', state=FaneronUsers.init_state)
-
-
+    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)  # Lj,fdbnm content_types=['photo']
+    # dp.register_message_handler(delayed_registration, commands='check_in', state=FaneronUsers.init_state)
