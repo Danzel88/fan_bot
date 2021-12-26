@@ -7,6 +7,7 @@ from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from config_reader import load_config
+from handlers.common import register_handlers_common
 from handlers.event_guest import register_faneron_users_handler
 from database import database as db
 
@@ -16,7 +17,8 @@ logger = logging.getLogger(__name__)
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command='/start', description="Описание бота, и подписка на получение информацонных сообщений"),
-        BotCommand(command='/check_in', description="Подтвердить посещение"),
+        # BotCommand(command='/check_in', description="Подтвердить посещение"),
+        BotCommand(command='/delete', description="Команда для тестирования. Удалить запись о себе")
     ]
     await bot.set_my_commands(commands)
 
@@ -76,5 +78,5 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 if __name__ == '__main__':
     # asyncio.run(main())
     register_faneron_users_handler(dp, config.tg_bot.admin_id)
-
+    register_handlers_common(dp)
     executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)
