@@ -21,7 +21,7 @@ class FaneronUsers(StatesGroup):
     waiting_for_age = State()
     waiting_for_city = State()
     waiting_review = State()
-
+    waiting_photo = State()
 
 async def init_user(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -63,7 +63,7 @@ async def init_user(message: types.Message):
 
 async def pres_accept(message: types.Message, state: FSMContext):
     if message.text not in presence:
-        await message.answer(f'Выбери из предложенных вариантов')
+        await message.answer(f'{msg.change_on_exists_variable}')
         return
     await state.update_data(presence=message.text)
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -84,7 +84,7 @@ async def pres_accept(message: types.Message, state: FSMContext):
 
 async def role_chosen(message: types.Message, state: FSMContext):
     if message.text not in person_role:
-        await message.answer(f'Выбери из предложенных вариантов')
+        await message.answer(f'{msg.change_on_exists_variable}')
         return
     await state.update_data(role=message.text.lower())
     await FaneronUsers.next()
@@ -110,9 +110,17 @@ async def get_review(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     await message.answer(f"{msg.final_msg}")
     await state.finish()
+    await FaneronUsers.last()
     await db.update_user(presence=user_data["presence"], person_role=user_data["role"],
                          age=user_data["age"], city=user_data["city"],
                          review=user_data["review"], tg_id=user_data["tg_id"])
+
+
+async def get_photo(message: types.Message):
+    if await db.select_user(message.from_user.id):
+        print('there is something here')
+    else:
+        print("there is nothing")
 
 
 def register_faneron_users_handler(dp: Dispatcher):
@@ -122,4 +130,5 @@ def register_faneron_users_handler(dp: Dispatcher):
     dp.register_message_handler(age_chosen, state=FaneronUsers.waiting_for_role)
     dp.register_message_handler(city_chosen, state=FaneronUsers.waiting_for_age)
     dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)  # Дописать content_types=['photo']
+    dp.register_message_handler(get_photo, state=FaneronUsers.waiting_photo)  # Дописать content_types=['photo']
 

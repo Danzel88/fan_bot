@@ -9,11 +9,11 @@ class Database:
     def __init__(self, name):
         self.name = name
         self._conn = self.connection()
-        logging.info("Database connection established")
+        logging.warning("Database connection established")
 
     def create_db(self):
         connection = sqlite3.connect(f'{self.name}.db')
-        logging.info('Database created')
+        logging.warning('Database created')
         cursor = connection.cursor()
         cursor.execute('''CREATE TABLE faneron_users(
         id INTEGER PRIMARY KEY,
@@ -45,7 +45,7 @@ class Database:
     async def create_user(self, tg_id: int):
         insert_query = f"INSERT INTO faneron_users (tg_id) VALUES ({tg_id})"
         await self._execute_query(insert_query)
-        logging.info(f"user {tg_id} added to DB")
+        logging.warning(f"user {tg_id} added to DB")
 
     async def select_user(self, tg_id: int):
         select_query = f'SELECT * FROM faneron_users WHERE tg_id = {tg_id}'
@@ -71,17 +71,21 @@ class Database:
                        f'person_role = "{person_role}", age = "{age}", city = "{city}",' \
                        f'review = "{review}" WHERE tg_id = {tg_id}'
         await self._execute_query(update_query)
-        logging.info(f"user with {tg_id} updated and send review")
+        if review:
+            logging.warning(f'user with {tg_id} add review')
+        else:
+            logging.warning(f"user with {tg_id} updated status to {presence}")
+
 
     async def subscribe(self, presence: str, tg_id: int):
         subscribe_query = f"UPDATE faneron_users SET presence = '{presence}' WHERE tg_id = {tg_id}"
         await self._execute_query(subscribe_query)
-        logging.info(f"user with {tg_id} subscribe to the newsletter")
+        logging.warning(f"user with {tg_id} subscribe to the newsletter")
 
     async def delete_user(self, tg_id: int):
         delete_query = f"DELETE FROM faneron_users WHERE tg_id = {tg_id}"
         await self._execute_query(delete_query)
-        logging.info(f"user with {tg_id} deleted")
+        logging.warning(f"user with {tg_id} deleted")
 
 
 database = Database(config.tg_bot.db_name)
