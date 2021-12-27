@@ -67,9 +67,9 @@ class Database:
 
     async def update_user(self, presence: str = None, person_role: str = None,
                           age: str = None, city: str = None, review: str = None, tg_id: int = None):
-        update_query = f"UPDATE faneron_users SET presence = '{presence}'," \
-                       f"person_role = '{person_role}', age = '{age}', city = '{city}'," \
-                       f"review = '{review}' WHERE tg_id = {tg_id}"
+        update_query = f'UPDATE faneron_users SET presence = "{presence}",' \
+                       f'person_role = "{person_role}", age = "{age}", city = "{city}",' \
+                       f'review = "{review}" WHERE tg_id = {tg_id}'
         await self._execute_query(update_query)
         logging.info(f"user with {tg_id} updated and send review")
 

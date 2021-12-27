@@ -44,40 +44,10 @@ async def on_startup(dp):
     db.connection()
     logger.error('Starting bot')
 
-# Парсинг файла конфигурации
+
 config = load_config("config/bot.ini")
-# Объявление и инициализация объектов бота и диспетчера
 bot = Bot(token=config.tg_bot.token)
 dp = Dispatcher(bot, storage=MemoryStorage())
-
-# async def main():
-#     # Настройка логирования в stdout
-#     logging.basicConfig(
-#         level=logging.INFO,
-#         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-#     )
-#     logger.error("Starting bot")
-#
-#     # Парсинг файла конфигурации
-#     config = load_config("config/bot.ini")
-#     # Объявление и инициализация объектов бота и диспетчера
-#     bot = Bot(token=config.tg_bot.token)
-#     dp = Dispatcher(bot, storage=MemoryStorage())
-#
-#
-#
-#     # Регистрация хэндлеров
-#     register_faneron_users_handler(dp, config.tg_bot.admin_id)
-#     # register_delayed_checkin(dp)
-#
-#
-#     # Установка команд бота
-#     await set_commands(bot)
-#
-#     # Запуск поллинга
-#     # await dp.skip_updates()  # пропуск накопившихся апдейтов (необязательно)
-#     await dp.start_polling()
-
 log = logging.getLogger("broadcast")
 
 
@@ -90,19 +60,19 @@ async def send_message(user_id: int, text: str, disable_notification: bool = Fal
     try:
         await bot.send_message(user_id, text, disable_notification=disable_notification)
     except exceptions.BotBlocked:
-        log.error(f"Target [ID:{user_id}]: blocked by user")
+        logger.error(f"Target [ID:{user_id}]: blocked by user")
     except exceptions.ChatNotFound:
-        log.error(f"Target [ID:{user_id}]: invalid user ID")
+        logger.error(f"Target [ID:{user_id}]: invalid user ID")
     except exceptions.RetryAfter as e:
-        log.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
+        logger.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
         await asyncio.sleep(e.timeout)
         return await send_message(bot, user_id, text)
     except exceptions.UserDeactivated:
-        log.error(f"Target [ID:{user_id}]: user is deactivated")
+        logger.error(f"Target [ID:{user_id}]: user is deactivated")
     except exceptions.TelegramAPIError:
-        log.exception(f"Target [ID:{user_id}]: failed")
+        logger.warning(f"Target [ID:{user_id}]: failed")
     else:
-        log.info(f"Target [ID:{user_id}]: success")
+        logger.warning(f"Target [ID:{user_id}]: success")
         return True
     return False
 
@@ -113,12 +83,11 @@ async def start_spam(message: types.Message):
     count = 0
     try:
         for user_id in users_list[0]:
-            print(user_id)
             if await send_message(user_id=user_id, text=message.text):
                 count += 1
             await asyncio.sleep(.05)
     finally:
-        log.info(f"{count} отправлено")
+        logger.warning(f'{count} сообщений отправлено')
 
 
 def register_sender(dp: Dispatcher, admin_id: int):
@@ -127,7 +96,6 @@ def register_sender(dp: Dispatcher, admin_id: int):
 
 
 if __name__ == '__main__':
-    # asyncio.run(main())
     register_faneron_users_handler(dp)
     register_handlers_common(dp)
     register_sender(dp=dp, admin_id=config.tg_bot.admin_id)
