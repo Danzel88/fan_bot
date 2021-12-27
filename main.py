@@ -2,8 +2,9 @@ import asyncio
 import logging
 
 from aiogram import Bot, executor, types
-from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.dispatcher.filters import IDFilter
+from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.utils import exceptions
 from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -51,9 +52,15 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 log = logging.getLogger("broadcast")
 
 
+class Sender(StatesGroup):
+    waiting_init_admin = State()
+    waiting_message_from_admin = State()
+
+
 async def init_sender_state(message: types.Message):
     await message.answer(f'Это функция рассылки. Сообщения будут отправлены всем пользователям бота. '
                          f'Пришли сообщение, которое нужно разослать', reply_markup=types.ReplyKeyboardRemove())
+    await Sender.waiting_message_from_admin.set()
 
 
 async def send_message(user_id: int, text: str, disable_notification: bool = False) -> bool:
@@ -73,6 +80,7 @@ async def send_message(user_id: int, text: str, disable_notification: bool = Fal
         logger.warning(f"Target [ID:{user_id}]: failed")
     else:
         logger.warning(f"Target [ID:{user_id}]: success")
+        await Sender.waiting_init_admin.set()
         return True
     return False
 
@@ -92,7 +100,7 @@ async def start_spam(message: types.Message):
 
 def register_sender(dp: Dispatcher, admin_id: int):
     dp.register_message_handler(init_sender_state, IDFilter(user_id=admin_id), commands="sender", state="*")
-    dp.register_message_handler(start_spam, IDFilter(user_id=admin_id))
+    dp.register_message_handler(start_spam, IDFilter(user_id=admin_id), state=Sender.waiting_message_from_admin)
 
 
 if __name__ == '__main__':
