@@ -52,13 +52,18 @@ class Database:
         record = await self._execute_query(select_query, select=True)
         return record
 
+    async def get_all_users(self):
+        get_query = f'SELECT tg_id FROM faneron_users;'
+        cursor = self._conn.cursor()
+        all_users = cursor.execute(get_query).fetchall()
+        return all_users
+
     async def create_or_update_user(self, presence: str = None, tg_id: int = None):
         user_presence = await self.select_user(tg_id)
         if user_presence is not None:
             await self.update_user(presence=presence, tg_id=tg_id)
         else:
             await self.create_user(tg_id=tg_id)
-
 
     async def update_user(self, presence: str = None, person_role: str = None,
                           age: str = None, city: str = None, review: str = None, tg_id: int = None):

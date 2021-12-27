@@ -1,6 +1,7 @@
 from aiogram import Dispatcher, types
+from aiogram.dispatcher.filters.state import StatesGroup, State
+
 from database import database as db
-from aiogram.dispatcher.filters import Text, IDFilter
 
 
 base_command = ["/delete"]
@@ -13,3 +14,4 @@ async def delete_record(message: types.Message):
 
 def register_handlers_common(dp: Dispatcher):
     dp.register_message_handler(delete_record, commands="delete")
+

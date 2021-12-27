@@ -1,8 +1,10 @@
+import asyncio
 import logging
 
-from aiogram import Bot, executor
+from aiogram import Bot, executor, types
 from aiogram.dispatcher import Dispatcher
-
+from aiogram.dispatcher.filters import IDFilter
+from aiogram.utils import exceptions
 from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
@@ -11,14 +13,15 @@ from handlers.common import register_handlers_common
 from handlers.event_guest import register_faneron_users_handler
 from database import database as db
 
+
 logger = logging.getLogger(__name__)
 
 
 async def set_commands(bot: Bot):
     commands = [
         BotCommand(command='/start', description="Описание бота, и подписка на получение информацонных сообщений"),
-        # BotCommand(command='/check_in', description="Подтвердить посещение"),
-        BotCommand(command='/delete', description="Команда для тестирования. Удалить запись о себе")
+        BotCommand(command='/delete', description="Команда для тестирования. Удалить запись о себе"),
+        BotCommand(command='/sender', description="Рассылка, только для админа")
     ]
     await bot.set_my_commands(commands)
 
@@ -75,8 +78,57 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 #     # await dp.skip_updates()  # пропуск накопившихся апдейтов (необязательно)
 #     await dp.start_polling()
 
+log = logging.getLogger("broadcast")
+
+
+async def init_sender_state(message: types.Message):
+    await message.answer(f'Это функция рассылки. Сообщения будут отправлены всем пользователям бота. '
+                         f'Пришли сообщение, которое нужно разослать', reply_markup=types.ReplyKeyboardRemove())
+
+
+async def send_message(user_id: int, text: str, disable_notification: bool = False) -> bool:
+    try:
+        await bot.send_message(user_id, text, disable_notification=disable_notification)
+    except exceptions.BotBlocked:
+        log.error(f"Target [ID:{user_id}]: blocked by user")
+    except exceptions.ChatNotFound:
+        log.error(f"Target [ID:{user_id}]: invalid user ID")
+    except exceptions.RetryAfter as e:
+        log.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
+        await asyncio.sleep(e.timeout)
+        return await send_message(bot, user_id, text)
+    except exceptions.UserDeactivated:
+        log.error(f"Target [ID:{user_id}]: user is deactivated")
+    except exceptions.TelegramAPIError:
+        log.exception(f"Target [ID:{user_id}]: failed")
+    else:
+        log.info(f"Target [ID:{user_id}]: success")
+        return True
+    return False
+
+
+async def start_spam(message: types.Message):
+    all_users = await db.get_all_users()
+    users_list = tuple(zip(*all_users))
+    count = 0
+    try:
+        for user_id in users_list[0]:
+            print(user_id)
+            if await send_message(user_id=user_id, text=message.text):
+                count += 1
+            await asyncio.sleep(.05)
+    finally:
+        log.info(f"{count} отправлено")
+
+
+def register_sender(dp: Dispatcher, admin_id: int):
+    dp.register_message_handler(init_sender_state, IDFilter(user_id=admin_id), commands="sender", state="*")
+    dp.register_message_handler(start_spam, IDFilter(user_id=admin_id))
+
+
 if __name__ == '__main__':
     # asyncio.run(main())
-    register_faneron_users_handler(dp, config.tg_bot.admin_id)
+    register_faneron_users_handler(dp)
     register_handlers_common(dp)
+    register_sender(dp=dp, admin_id=config.tg_bot.admin_id)
     executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)
