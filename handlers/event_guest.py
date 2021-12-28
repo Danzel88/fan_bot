@@ -1,5 +1,9 @@
+import os
+from typing import Optional
+
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import ContentTypeFilter
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from database import database as db
@@ -11,11 +15,10 @@ person_role = ["Гость", "Спикер", "Организатор"]
 age_interval = ["16-20", "21-25", "26-30", "31-35", "36-40", "40-50", "50+"]
 city = ["Москва", "Другой"]
 
-photo_dir = "photos/"
 
 
 class FaneronUsers(StatesGroup):
-    init_state = State()
+    # init_state = State()
     waiting_for_presence_accept = State()
     waiting_for_role = State()
     waiting_for_age = State()
@@ -33,14 +36,14 @@ async def init_user(message: types.Message):
         if message.from_user.id == user_data[-1] and user_data[-2] is None:
             await message.answer(f'{msg.registration_done}',
                                  reply_markup=keyboard)
-            await FaneronUsers.init_state.set()
+            await FaneronUsers.waiting_for_presence_accept.set()
             return
         elif user_data[1] == presence[1]:
             accept_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
             accept_kb.add(presence[0])
             await message.answer(f'{msg.already_subscribe}',
                                  reply_markup=accept_kb)
-            await FaneronUsers.init_state.set()
+            await FaneronUsers.waiting_for_presence_accept.set()
             return
         elif user_data[1] == presence[0] and user_data[-2] != "None":
             await message.answer(f'{msg.review_already_exists}',
@@ -49,18 +52,18 @@ async def init_user(message: types.Message):
         elif user_data[1] == presence[0] and user_data[-2] == "None":
             await message.answer(f'{msg.registration_done}',
                                  reply_markup=keyboard)
-            await FaneronUsers.init_state.set()
+            await FaneronUsers.waiting_for_presence_accept.set()
             return
         else:
             await message.answer(f'{msg.review_already_exists}',
                                  reply_markup=types.ReplyKeyboardRemove())
             return
     await message.answer(f"{msg.grete}", reply_markup=keyboard)
-    await FaneronUsers.init_state.set()
+    await FaneronUsers.waiting_for_presence_accept.set()
     await db.create_user(tg_id=int(message.from_user.id))
 
 
-async def pres_accept(message: types.Message, state: FSMContext):
+async def process_presence(message: types.Message, state: FSMContext):
     if message.text not in presence:
         await message.answer(f'{msg.change_on_exists_variable}')
         return
@@ -81,7 +84,7 @@ async def pres_accept(message: types.Message, state: FSMContext):
     await message.answer(f"{msg.change_role}", reply_markup=keyboard)
 
 
-async def role_chosen(message: types.Message, state: FSMContext):
+async def process_role(message: types.Message, state: FSMContext):
     if message.text not in person_role:
         await message.answer(f'{msg.change_on_exists_variable}')
         return
@@ -90,7 +93,7 @@ async def role_chosen(message: types.Message, state: FSMContext):
     await message.answer(f"{msg.change_age_interval}", reply_markup=types.ReplyKeyboardRemove())
 
 
-async def age_chosen(message: types.Message, state: FSMContext):
+async def process_age(message: types.Message, state: FSMContext):
     if message.text.isdigit():
         if int(message.text) > 118:
             await message.answer(f"Ты супер стар. Напиши реальный возраст, это важно!")
@@ -103,38 +106,42 @@ async def age_chosen(message: types.Message, state: FSMContext):
         await message.answer(f"{msg.wrong_format_age}")
 
 
-async def city_chosen(message: types.Message, state: FSMContext):
+async def process_city(message: types.Message, state: FSMContext):
     await state.update_data(city=message.text.lower())
     await FaneronUsers.next()
-    st = FaneronUsers.get_root()
-
     await message.answer(f'{msg.get_review_and_message}',
                          reply_markup=types.ReplyKeyboardRemove())
 
 
-async def get_review(message: types.Message, state: FSMContext):
-    await state.update_data(review=message.text)
+async def process_review(message: types.Message, state: FSMContext):
+    review_tex = message.text
+    if message.photo:
+        await process_photo(message, state)
+        review_tex = message.caption
+
+    await state.update_data(review=review_tex)
     await state.update_data(tg_id=message.from_user.id)
     user_data = await state.get_data()
     await message.answer(f"{msg.final_msg}")
     await state.finish()
-    await FaneronUsers.next()
+    # await FaneronUsers.next()
     await db.update_user(presence=user_data["presence"], person_role=user_data["role"],
                          age=user_data["age"], city=user_data["city"],
                          review=user_data["review"], tg_id=user_data["tg_id"])
 
 
-async def get_photo(message: types.Message):
-    await message.photo[-1].download(f"{photo_dir}")
+async def process_photo(message: types.Message, state: FSMContext):
+    photo_dir = f"{os.getcwd()}\photos"
+    photo_name = f"{message.from_user.id}"
+    await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}.jpg")
+    # await state.finish()
 
 
 def register_faneron_users_handler(dp: Dispatcher):
     dp.register_message_handler(init_user, commands='start', state='*')
-    dp.register_message_handler(pres_accept, state=FaneronUsers.init_state)
-    dp.register_message_handler(role_chosen, state=FaneronUsers.waiting_for_presence_accept)
-    dp.register_message_handler(age_chosen, state=FaneronUsers.waiting_for_role)
-    dp.register_message_handler(city_chosen, state=FaneronUsers.waiting_for_age)
-    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)
-    dp.register_message_handler(get_photo,
-                                state=(FaneronUsers.waiting_photo, FaneronUsers.waiting_review),
-                                content_types=['photo'])
+    dp.register_message_handler(process_presence, state=FaneronUsers.waiting_for_presence_accept)
+    dp.register_message_handler(process_role, state=FaneronUsers.waiting_for_role)
+    dp.register_message_handler(process_age, state=FaneronUsers.waiting_for_age)
+    dp.register_message_handler(process_city, state=FaneronUsers.waiting_for_city)
+    dp.register_message_handler(process_review, state=FaneronUsers.waiting_review, content_types=['photo', 'text'])
+    # dp.register_message_handler(process_photo, state=FaneronUsers.waiting_photo, content_types=['photo'])
