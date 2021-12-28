@@ -14,6 +14,8 @@ class Messages:
     registration_done: str = "Твоя регистрация в боте ✅ Теперь можешь оставить отзыв или подписаться на новости"
     already_subscribe: str = "У тебя уже подписка на новости"
     change_on_exists_variable = "Выбери из предложенных варинатов"
+    wrong_format_age: str = "Введи возраст цифрами"
+
 
 msg = Messages()
 

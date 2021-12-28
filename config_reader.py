@@ -7,6 +7,7 @@ class TgBot:
     token: str
     admin_id: int
     db_name: str
+    photo_limit: int
 
 
 @dataclass
@@ -22,4 +23,5 @@ def load_config(path: str):
 
     return Config(tg_bot=TgBot(token=tg_bot["token"],
                                admin_id=int(tg_bot["admin_id"]),
-                               db_name=tg_bot['db_name']))
+                               db_name=tg_bot['db_name'],
+                               photo_limit=int(tg_bot['photo_quantity_limit'])))

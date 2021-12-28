@@ -23,15 +23,14 @@ class FaneronUsers(StatesGroup):
     waiting_review = State()
     waiting_photo = State()
 
+
 async def init_user(message: types.Message):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for pres in presence:
         keyboard.add(pres)
     user_data = await db.select_user(message.from_user.id)
-    print(user_data)
     if user_data is not None:
         if message.from_user.id == user_data[-1] and user_data[-2] is None:
-            print(f'first IF')
             await message.answer(f'{msg.registration_done}',
                                  reply_markup=keyboard)
             await FaneronUsers.init_state.set()
@@ -92,14 +91,23 @@ async def role_chosen(message: types.Message, state: FSMContext):
 
 
 async def age_chosen(message: types.Message, state: FSMContext):
-    await state.update_data(age=message.text)
-    await FaneronUsers.next()
-    await message.answer(f"{msg.change_city}", reply_markup=types.ReplyKeyboardRemove())
+    if message.text.isdigit():
+        if int(message.text) > 118:
+            await message.answer(f"Ты супер стар. Напиши реальный возраст, это важно!")
+            return
+        await state.update_data(age=message.text)
+        await FaneronUsers.next()
+        await message.answer(f"{msg.change_city}", reply_markup=types.ReplyKeyboardRemove())
+    else:
+
+        await message.answer(f"{msg.wrong_format_age}")
 
 
 async def city_chosen(message: types.Message, state: FSMContext):
     await state.update_data(city=message.text.lower())
     await FaneronUsers.next()
+    st = FaneronUsers.get_root()
+
     await message.answer(f'{msg.get_review_and_message}',
                          reply_markup=types.ReplyKeyboardRemove())
 
@@ -110,17 +118,14 @@ async def get_review(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
     await message.answer(f"{msg.final_msg}")
     await state.finish()
-    await FaneronUsers.last()
+    await FaneronUsers.next()
     await db.update_user(presence=user_data["presence"], person_role=user_data["role"],
                          age=user_data["age"], city=user_data["city"],
                          review=user_data["review"], tg_id=user_data["tg_id"])
 
 
 async def get_photo(message: types.Message):
-    if await db.select_user(message.from_user.id):
-        print('there is something here')
-    else:
-        print("there is nothing")
+    await message.photo[-1].download(f"{photo_dir}")
 
 
 def register_faneron_users_handler(dp: Dispatcher):
@@ -129,6 +134,7 @@ def register_faneron_users_handler(dp: Dispatcher):
     dp.register_message_handler(role_chosen, state=FaneronUsers.waiting_for_presence_accept)
     dp.register_message_handler(age_chosen, state=FaneronUsers.waiting_for_role)
     dp.register_message_handler(city_chosen, state=FaneronUsers.waiting_for_age)
-    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)  # Дописать content_types=['photo']
-    dp.register_message_handler(get_photo, state=FaneronUsers.waiting_photo)  # Дописать content_types=['photo']
-
+    dp.register_message_handler(get_review, state=FaneronUsers.waiting_for_city)
+    dp.register_message_handler(get_photo,
+                                state=(FaneronUsers.waiting_photo, FaneronUsers.waiting_review),
+                                content_types=['photo'])
