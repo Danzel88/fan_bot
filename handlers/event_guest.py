@@ -119,7 +119,6 @@ async def write_db_user_data(state: FSMContext):
 
 
 async def process_review(message: types.Message, state: FSMContext):
-    print(message)
     if message.photo:
         if not message.caption:
             await asyncio.sleep(1.0)
@@ -140,23 +139,31 @@ async def process_review(message: types.Message, state: FSMContext):
 
 async def process_photo(message: types.Message, state: FSMContext):
     print(message)
-    photo_dir = f"{os.getcwd()}\photos"
+    photo_dir = f"{os.getcwd()}/photos"
     photo_name = f"{message.from_user.id}"
+    tmp = os.getcwd()
+    print(tmp)
+
     if await photo_counter(message.from_user.id):
-        await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}-1.jpg")
-        await message.answer(f'Второе фото получили. На этом все. Оставайся с нами')
+        await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}-1.jpg")
+        # await message.answer(f'Второе фото получили. На этом все. Оставайся с нами')
         await state.finish()
         return
-    await message.answer(f'первое фото получили')
-    await photo_counter(message.from_user.id)
-    await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}.jpg")
+    # await message.answer(f'первое фото получили')
+    await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}.jpg")
 
 
 async def photo_counter(tg_id: int):
-    photo_dir = f"{os.getcwd()}\photos"
+    photo_dir = f"{os.getcwd()}/photos"
     photo_name = f"{tg_id}"
-    res = os.path.exists(f"{photo_dir}\{photo_name}\{photo_name}.jpg")
+    res = os.path.exists(f"{photo_dir}/{photo_name}/{photo_name}.jpg")
     return res
+
+
+async def spam_process(message: types.Message, state: FSMContext):
+    await message.answer(f'Если хочешь пообщаться, то заходи в <a href="https://instagram.com/faneron.ru">Инстаграм</a> Фанерона. Там игры, опросы, розыгрыши и классное комьюнити '
+                         f'',
+                         parse_mode="HTML")
 
 
 def register_faneron_users_handler(dp: Dispatcher):
@@ -167,3 +174,4 @@ def register_faneron_users_handler(dp: Dispatcher):
     dp.register_message_handler(process_city, state=FaneronUsers.waiting_for_city)
     dp.register_message_handler(process_review, state=FaneronUsers.waiting_review, content_types=['photo', 'text'])
     dp.register_message_handler(process_photo, state=FaneronUsers.waiting_photo, content_types=['photo'])
+    dp.register_message_handler(spam_process, state="*")

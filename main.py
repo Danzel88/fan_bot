@@ -17,15 +17,15 @@ from database import database as db
 
 formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
 
-logging.basicConfig(
-    # TODO раскомментировать на сервере
-    filename=f'bot-from-{datetime.datetime.now().date()}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    # TODO logging.WARNING
-    level=logging.WARNING
-)
+# logging.basicConfig(
+#     # TODO раскомментировать на сервере
+#     filename=f'bot-from-{datetime.datetime.now().date()}.log',
+#     filemode='w',
+#     format=formatter,
+#     datefmt='%Y-%m-%d %H:%M:%S',
+#     # TODO logging.WARNING
+#     level=logging.WARNING
+# )
 
 
 # logger = logging.getLogger(__name__)
@@ -109,7 +109,7 @@ def register_sender(dp: Dispatcher, admin_id: int):
 
 
 if __name__ == '__main__':
+    register_sender(dp=dp, admin_id=config.tg_bot.admin_id)
     register_faneron_users_handler(dp)
     register_handlers_common(dp)
-    register_sender(dp=dp, admin_id=config.tg_bot.admin_id)
     executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)

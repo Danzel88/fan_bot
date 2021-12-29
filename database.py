@@ -6,15 +6,15 @@ from config_reader import load_config
 
 config = load_config("config/bot.ini")
 formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
-logging.basicConfig(
-#     # TODO раскомментировать на сервере
-    filename=f'bot-from-{datetime.datetime.now().date()}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-#     # TODO logging.WARNING
-    level=logging.WARNING
-)
+# logging.basicConfig(
+# #     # TODO раскомментировать на сервере
+#     filename=f'bot-from-{datetime.datetime.now().date()}.log',
+#     filemode='w',
+#     format=formatter,
+#     datefmt='%Y-%m-%d %H:%M:%S',
+# #     # TODO logging.WARNING
+#     level=logging.WARNING
+# )
 
 class Database:
     def __init__(self, name):
