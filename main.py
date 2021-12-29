@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import datetime
 
 from aiogram import Bot, executor, types
 from aiogram.dispatcher import Dispatcher, FSMContext
@@ -14,8 +15,20 @@ from handlers.common import register_handlers_common
 from handlers.event_guest import register_faneron_users_handler
 from database import database as db
 
+formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(
+    # TODO раскомментировать на сервере
+    filename=f'bot-from-{datetime.datetime.now().date()}.log',
+    filemode='w',
+    format=formatter,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    # TODO logging.WARNING
+    level=logging.WARNING
+)
+
+
+# logger = logging.getLogger(__name__)
 
 
 async def set_commands(bot: Bot):
@@ -28,22 +41,14 @@ async def set_commands(bot: Bot):
 
 
 async def on_shutdown(dp):
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    )
-    logger.warning("Shutting down..")
+    logging.warning("Shutting down..")
     db._conn.close()
-    logger.warning("DB Connection closed")
+    logging.warning("DB Connection closed")
 
 
 async def on_startup(dp):
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    )
     db.connection()
-    logger.error('Starting bot')
+    logging.error('Starting bot')
 
 
 config = load_config("config/bot.ini")
@@ -67,19 +72,19 @@ async def send_message(user_id: int, text: str, disable_notification: bool = Fal
     try:
         await bot.send_message(user_id, text, disable_notification=disable_notification)
     except exceptions.BotBlocked:
-        logger.error(f"Target [ID:{user_id}]: blocked by user")
+        logging.error(f"Target [ID:{user_id}]: blocked by user")
     except exceptions.ChatNotFound:
-        logger.error(f"Target [ID:{user_id}]: invalid user ID")
+        logging.error(f"Target [ID:{user_id}]: invalid user ID")
     except exceptions.RetryAfter as e:
-        logger.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
+        logging.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
         await asyncio.sleep(e.timeout)
         return await send_message(bot, user_id, text)
     except exceptions.UserDeactivated:
-        logger.error(f"Target [ID:{user_id}]: user is deactivated")
+        logging.error(f"Target [ID:{user_id}]: user is deactivated")
     except exceptions.TelegramAPIError:
-        logger.warning(f"Target [ID:{user_id}]: failed")
+        logging.warning(f"Target [ID:{user_id}]: failed")
     else:
-        logger.warning(f"Target [ID:{user_id}]: success")
+        logging.warning(f"Target [ID:{user_id}]: success")
         await Sender.waiting_init_admin.set()
         return True
     return False
@@ -95,7 +100,7 @@ async def start_spam(message: types.Message):
                 count += 1
             await asyncio.sleep(.05)
     finally:
-        logger.warning(f'{count} сообщений отправлено')
+        logging.warning(f'{count} сообщений отправлено')
 
 
 def register_sender(dp: Dispatcher, admin_id: int):

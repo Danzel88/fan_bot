@@ -1,11 +1,9 @@
 import asyncio
 import os
 import time
-from typing import Optional
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import ContentTypeFilter
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from database import database as db
@@ -18,9 +16,7 @@ age_interval = ["16-20", "21-25", "26-30", "31-35", "36-40", "40-50", "50+"]
 city = ["Москва", "Другой"]
 
 
-
 class FaneronUsers(StatesGroup):
-    # init_state = State()
     waiting_for_presence_accept = State()
     waiting_for_role = State()
     waiting_for_age = State()
@@ -90,7 +86,7 @@ async def process_role(message: types.Message, state: FSMContext):
     if message.text not in person_role:
         await message.answer(f'{msg.change_on_exists_variable}')
         return
-    await state.update_data(role=message.text.lower())
+    await state.update_data(role=message.text)
     await FaneronUsers.next()
     await message.answer(f"{msg.change_age_interval}", reply_markup=types.ReplyKeyboardRemove())
 
@@ -109,7 +105,7 @@ async def process_age(message: types.Message, state: FSMContext):
 
 
 async def process_city(message: types.Message, state: FSMContext):
-    await state.update_data(city=message.text.lower())
+    await state.update_data(city=message.text)
     await FaneronUsers.next()
     await message.answer(f'{msg.get_review_and_message}',
                          reply_markup=types.ReplyKeyboardRemove())
@@ -126,12 +122,10 @@ async def process_review(message: types.Message, state: FSMContext):
     print(message)
     if message.photo:
         if not message.caption:
-            print('only photo eeee')
             await asyncio.sleep(1.0)
             await process_photo(message, state)
             return
         else:
-            print('photo eeee and text eeee')
             await process_photo(message, state)
             await state.update_data(review=message.caption)
             await state.update_data(tg_id=message.from_user.id)
@@ -141,24 +135,21 @@ async def process_review(message: types.Message, state: FSMContext):
         await state.update_data(tg_id=message.from_user.id)
         await write_db_user_data(state)
     await message.answer(f"{msg.final_msg}")
-    # await state.finish()
     await FaneronUsers.next()
 
 
-async def process_photo(message: types.Message, state:FSMContext):
+async def process_photo(message: types.Message, state: FSMContext):
+    print(message)
     photo_dir = f"{os.getcwd()}\photos"
     photo_name = f"{message.from_user.id}"
-    tmp = await photo_counter(message.from_user.id)
-    print(tmp)
     if await photo_counter(message.from_user.id):
-        print(f'first photo found')
         await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}-1.jpg")
         await message.answer(f'Второе фото получили. На этом все. Оставайся с нами')
         await state.finish()
         return
     await message.answer(f'первое фото получили')
+    await photo_counter(message.from_user.id)
     await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}.jpg")
-    # await state.finish()
 
 
 async def photo_counter(tg_id: int):
@@ -166,17 +157,6 @@ async def photo_counter(tg_id: int):
     photo_name = f"{tg_id}"
     res = os.path.exists(f"{photo_dir}\{photo_name}\{photo_name}.jpg")
     return res
-
-#
-# async def final_update_user_data(message, state: FSMContext):
-#     await state.update_data(review=message)
-#     await state.update_data(tg_id=message.from_user.id)
-#     await state.finish()
-#     user_data = await state.get_data()
-#     print(user_data)
-#     await db.update_user(presence=user_data["presence"], person_role=user_data["role"],
-#                          age=user_data["age"], city=user_data["city"],
-#                          review=user_data["review"], tg_id=user_data["tg_id"])
 
 
 def register_faneron_users_handler(dp: Dispatcher):
