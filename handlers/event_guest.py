@@ -1,4 +1,6 @@
+import asyncio
 import os
+import time
 from typing import Optional
 
 from aiogram import Dispatcher, types
@@ -113,42 +115,57 @@ async def process_city(message: types.Message, state: FSMContext):
                          reply_markup=types.ReplyKeyboardRemove())
 
 
-async def process_review(message: types.Message, state: FSMContext):
-    review_text = message.text
-    if message.photo:
-        print('photo eeee')
-        review_text = message.caption
-        await process_photo(message, state)
-    await state.update_data(review=review_text)
-    await state.update_data(tg_id=message.from_user.id)
+async def write_db_user_data(state: FSMContext):
     user_data = await state.get_data()
-    await message.answer(f"{msg.final_msg}")
-    # await state.finish()
-    await FaneronUsers.next()
     await db.update_user(presence=user_data["presence"], person_role=user_data["role"],
                          age=user_data["age"], city=user_data["city"],
                          review=user_data["review"], tg_id=user_data["tg_id"])
 
 
-async def process_photo(message: types.Message, state: FSMContext):
+async def process_review(message: types.Message, state: FSMContext):
+    print(message)
+    if message.photo:
+        if not message.caption:
+            print('only photo eeee')
+            await asyncio.sleep(1.0)
+            await process_photo(message, state)
+            return
+        else:
+            print('photo eeee and text eeee')
+            await process_photo(message, state)
+            await state.update_data(review=message.caption)
+            await state.update_data(tg_id=message.from_user.id)
+            await write_db_user_data(state)
+    else:
+        await state.update_data(review=message.text)
+        await state.update_data(tg_id=message.from_user.id)
+        await write_db_user_data(state)
+    await message.answer(f"{msg.final_msg}")
+    # await state.finish()
+    await FaneronUsers.next()
+
+
+async def process_photo(message: types.Message, state:FSMContext):
     photo_dir = f"{os.getcwd()}\photos"
     photo_name = f"{message.from_user.id}"
+    tmp = await photo_counter(message.from_user.id)
+    print(tmp)
     if await photo_counter(message.from_user.id):
         print(f'first photo found')
         await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}-1.jpg")
-        await message.answer(f'Второе фото получили')
+        await message.answer(f'Второе фото получили. На этом все. Оставайся с нами')
         await state.finish()
         return
+    await message.answer(f'первое фото получили')
     await message.photo[-1].download(destination_file=f"{photo_dir}\{photo_name}\{photo_name}.jpg")
     # await state.finish()
-    return
 
 
 async def photo_counter(tg_id: int):
     photo_dir = f"{os.getcwd()}\photos"
     photo_name = f"{tg_id}"
-    exist_file = os.path.exists(f"{photo_dir}\{photo_name}\{photo_name}.jpg")
-    return exist_file
+    res = os.path.exists(f"{photo_dir}\{photo_name}\{photo_name}.jpg")
+    return res
 
 #
 # async def final_update_user_data(message, state: FSMContext):
