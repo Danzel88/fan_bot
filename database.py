@@ -3,7 +3,6 @@ import os
 import sqlite3
 import logging
 from config_reader import load_config
-import pandas as pd
 
 
 config = load_config("config/bot.ini")
