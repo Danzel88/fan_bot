@@ -2,7 +2,7 @@ import datetime
 import os
 import sqlite3
 import logging
-from config.config_reader import load_config
+from config_reader import load_config
 import pandas as pd
 
 
@@ -96,11 +96,6 @@ class Database:
         delete_query = f"DELETE FROM faneron_users WHERE tg_id = {tg_id}"
         await self._execute_query(delete_query)
         logging.warning(f"user with {tg_id} deleted")
-
-    async def unload(self):
-        statistic_file_name = f'{datetime.datetime.now().date()}'
-        dataframe = pd.read_sql('select * from faneron_users;', database._conn)
-        dataframe.to_excel(f'{statistic_file_name}.xlsx', index=False)
 
 
 database = Database(config.tg_bot.db_name)
