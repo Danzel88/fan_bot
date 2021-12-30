@@ -2,19 +2,19 @@ import datetime
 import os
 import sqlite3
 import logging
-from config_reader import load_config
+from config.config_reader import load_config
+import pandas as pd
+
 
 config = load_config("config/bot.ini")
 formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
 logging.basicConfig(
-#     # TODO раскомментировать на сервере
     filename=f'bot-from-{datetime.datetime.now().date()}.log',
     filemode='w',
     format=formatter,
     datefmt='%Y-%m-%d %H:%M:%S',
-#     # TODO logging.WARNING
-    level=logging.WARNING
-)
+    level=logging.WARNING)
+
 
 class Database:
     def __init__(self, name):
@@ -87,7 +87,6 @@ class Database:
         else:
             logging.warning(f"user with {tg_id} updated status to {presence}")
 
-
     async def subscribe(self, presence: str, tg_id: int):
         subscribe_query = f"UPDATE faneron_users SET presence = '{presence}' WHERE tg_id = {tg_id}"
         await self._execute_query(subscribe_query)
@@ -97,6 +96,11 @@ class Database:
         delete_query = f"DELETE FROM faneron_users WHERE tg_id = {tg_id}"
         await self._execute_query(delete_query)
         logging.warning(f"user with {tg_id} deleted")
+
+    async def unload(self):
+        statistic_file_name = f'{datetime.datetime.now().date()}'
+        dataframe = pd.read_sql('select * from faneron_users;', database._conn)
+        dataframe.to_excel(f'{statistic_file_name}.xlsx', index=False)
 
 
 database = Database(config.tg_bot.db_name)

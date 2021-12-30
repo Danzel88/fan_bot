@@ -57,6 +57,8 @@ async def init_user(message: types.Message):
                                  reply_markup=types.ReplyKeyboardRemove())
             return
     await message.answer(f"{msg.grete}", reply_markup=keyboard)
+    await asyncio.sleep(1.0)
+    await message.answer(f"{msg.atention_about_reviw}", reply_markup=keyboard)
     await FaneronUsers.waiting_for_presence_accept.set()
     await db.create_user(tg_id=int(message.from_user.id))
 

@@ -10,7 +10,7 @@ from aiogram.utils import exceptions
 from aiogram.types import BotCommand
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
-from config_reader import load_config
+from config.config_reader import load_config
 from dialogs import msg
 from handlers.common import register_handlers_common
 from handlers.event_guest import register_faneron_users_handler
