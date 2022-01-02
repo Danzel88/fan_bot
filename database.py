@@ -6,9 +6,11 @@ from config_reader import load_config
 
 
 config = load_config("config/bot.ini")
-formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
+formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
+            '(%(filename)s:%(lineno)s)'
 logging.basicConfig(
-    filename=f'bot-from-{datetime.datetime.now().date()}.log',
+    filename=f'log/bot-from-'
+             f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
     filemode='w',
     format=formatter,
     datefmt='%Y-%m-%d %H:%M:%S',
@@ -68,7 +70,8 @@ class Database:
         all_users = cursor.execute(get_query).fetchall()
         return all_users
 
-    async def create_or_update_user(self, presence: str = None, tg_id: int = None):
+    async def create_or_update_user(self, presence: str = None,
+                                    tg_id: int = None):
         user_presence = await self.select_user(tg_id)
         if user_presence is not None:
             await self.update_user(presence=presence, tg_id=tg_id)

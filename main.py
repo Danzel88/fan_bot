@@ -20,7 +20,7 @@ formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno
 
 logging.basicConfig(
     # TODO раскомментировать на сервере
-    filename=f'bot-from-{datetime.datetime.now().date()}.log',
+    filename=f'/log/bot-from-{datetime.datetime.now().date()}.log',
     filemode='w',
     format=formatter,
     datefmt='%Y-%m-%d %H:%M:%S',
