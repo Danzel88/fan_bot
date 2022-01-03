@@ -158,6 +158,8 @@ async def photo_counter(tg_id: int):
 
 async def spam_process(message: types.Message, state: FSMContext):
     await message.answer(f'{msg.spam_handler}', parse_mode="HTML")
+    await asyncio.sleep(1.0)
+    await message.answer(f'{msg.troble_shuting}', parse_mode="HTML")
 
 
 def register_faneron_users_handler(dp: Dispatcher):
