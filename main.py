@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import datetime
 
@@ -62,6 +63,7 @@ class Sender(StatesGroup):
     waiting_init_admin = State()
     waiting_message_from_admin = State()
     waiting_message_from_admin_to_test_mailing = State()
+    waiting_message_id = State()
 
 
 async def init_sender_state(message: types.Message):
@@ -77,7 +79,8 @@ async def send_message(message: types.Message,
                        user_id: int, disable_notification: bool = False) -> bool:
     try:
         if message.text is not None:
-            await bot.send_message(chat_id=user_id, text=message.text, disable_notification=disable_notification,
+            await bot.send_message(chat_id=user_id, text=message.text,
+                                   disable_notification=disable_notification,
                                    parse_mode="HTML")
         elif message.photo is not None:
             await bot.send_photo(chat_id=user_id, photo=message.photo[-1].file_id, caption=message.caption,
@@ -95,46 +98,71 @@ async def send_message(message: types.Message,
     except exceptions.TelegramAPIError:
         logging.warning(f"Target [ID:{user_id}]: failed")
     else:
-        logging.warning(f"Target [ID:{user_id}]: success")
-        # await Sender.waiting_init_admin.set()
+        logging.warning(f"Target [ID:{user_id}]: success.")
         return True
     return False
 
 
 async def test_sender(message: types.Message, state: FSMContext):
+    logging.warning(f'Запуск тестовой рассылки')
     try:
         await send_message(user_id=config.tg_bot.admin_id, message=message)
-        logging.warning(f'Start test mailing')
     except IndexError:
         logging.error(f'нет пользователей для отправки')
     finally:
+        await message.answer(f'Номер рассылки для удаления {int(message.message_id) + 1}')
         await state.finish()
 
 
 async def start_spam(message: types.Message, state: FSMContext):
+    logging.warning(f'Запущена рассылка')
     all_users = await db.get_all_users()
     users_list = tuple(zip(*all_users))
     count = 0
+    sent_message = {}
     try:
         for user_id in users_list[0]:
             if await send_message(user_id=user_id, message=message):
+                sent_message[user_id] = message.message_id + 1 + count
                 count += 1
             await asyncio.sleep(.05)
     except IndexError:
         logging.error(f'нет пользователей для отправки')
     finally:
+        await message.answer(f'Номер рассылки для удаления {int(message.message_id) + 1}')
         await state.finish()
         logging.warning(f'{count} сообщений отправлено')
+        with open(f"sender_data/{message.message_id + 1}.json", 'w') as f:
+            json.dump(sent_message, f)
+
+
+async def del_init(message: types.Message):
+    await message.answer(f'Пришли номер рассылки которую нужно удалить')
+    await Sender.waiting_message_id.set()
+    logging.warning(f'Пользователем {message.from_user.id} запущено удаление рассылки')
+
+
+async def delete_send_message(message: types.Message, state: FSMContext):
+    with open(f'sender_data/{message.text}.json') as f:
+        data = json.load(f)
+    for k in data:
+        await bot.delete_message(chat_id=k, message_id=data[k])
+    await asyncio.sleep(0.5)
+    await state.finish()
+    logging.warning(f'Рассылка {message.text} удалена')
 
 
 def register_sender(dp: Dispatcher, admin_id: int):
     dp.register_message_handler(init_sender_state, IDFilter(user_id=admin_id), commands="sender", state="*")
     dp.register_message_handler(init_sender_state, IDFilter(user_id=admin_id), commands="test_sender", state="*")
+    dp.register_message_handler(del_init, IDFilter(user_id=admin_id), commands="del_send", state="*")
+    dp.register_message_handler(delete_send_message, state=Sender.waiting_message_id)
     dp.register_message_handler(start_spam, IDFilter(user_id=admin_id), state=Sender.waiting_message_from_admin,
                                 content_types=['text', 'photo'])
     dp.register_message_handler(test_sender, IDFilter(user_id=admin_id),
                                 state=Sender.waiting_message_from_admin_to_test_mailing,
                                 content_types=['text', 'photo'])
+
 
 if __name__ == '__main__':
     register_sender(dp=dp, admin_id=config.tg_bot.admin_id)

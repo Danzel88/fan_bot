@@ -7,15 +7,15 @@ import os
 import sqlite3
 
 
-# source_db = '/home/den/code/fan_bot/faneron_users.db'
-source_db = '/home/den/faneron_users.db'
+source_db = '/home/den/code/fan_bot/faneron_users.db'
+# source_db = '/home/den/faneron_users.db'
 dst_path = '/home/den/code/fan_bot/user_data_for_analize/'
 
 
 formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
             '(%(filename)s:%(lineno)s)'
 logging.basicConfig(
-    filename=f'log/parser-from-'
+    filename=f'code/fan_bot/log/parser-from-'
              f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
     filemode='w',
     format=formatter,
@@ -41,7 +41,7 @@ def db_to_excel(db_path):
     conn = sqlite3.connect(db_path)
     df = pd.read_sql('select * from faneron_users', conn)
     df.to_excel(f'{dst_path}all_users_'
-                f'{datetime.datetime.now().strftime("%H_%M_%S")}.xlsx',
+                f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
                 index=False)
 
 
