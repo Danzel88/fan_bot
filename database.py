@@ -55,17 +55,17 @@ class Database:
         cursor.close()
 
     async def create_user(self, tg_id: int):
-        insert_query = f"INSERT INTO faneron_users (tg_id) VALUES ({tg_id})"
+        insert_query = f'''INSERT INTO faneron_users (tg_id) VALUES ({tg_id})'''
         await self._execute_query(insert_query)
         logging.warning(f"user {tg_id} added to DB")
 
     async def select_user(self, tg_id: int):
-        select_query = f'SELECT * FROM faneron_users WHERE tg_id = {tg_id}'
+        select_query = f'''SELECT * FROM faneron_users WHERE tg_id = {tg_id}'''
         record = await self._execute_query(select_query, select=True)
         return record
 
     async def get_all_users(self):
-        get_query = f'SELECT tg_id FROM faneron_users;'
+        get_query = f'''SELECT tg_id FROM faneron_users;'''
         cursor = self._conn.cursor()
         all_users = cursor.execute(get_query).fetchall()
         return all_users
@@ -78,24 +78,30 @@ class Database:
         else:
             await self.create_user(tg_id=tg_id)
 
+    async def execute_update(self, query, val):
+        cur = self._conn.cursor()
+        cur.execute(query, val)
+        self._conn.commit()
+        cur.close()
+
     async def update_user(self, presence: str = None, person_role: str = None,
                           age: str = None, city: str = None, review: str = None, tg_id: int = None):
-        update_query = f'UPDATE faneron_users SET presence = "{presence}",' \
-                       f'person_role = "{person_role}", age = "{age}", city = "{city}",' \
-                       f'review = "{review}" WHERE tg_id = {tg_id}'
-        await self._execute_query(update_query)
+        update_query = '''UPDATE faneron_users SET presence = ?, person_role = ?, age = ?, city = ?, review = ? WHERE tg_id = ?'''
+        val = (presence, person_role, age, city, review, tg_id)
+        # await self._execute_query(update_query)
+        await self.execute_update(update_query, val)
         if review:
             logging.warning(f'user with {tg_id} add review')
         else:
-            logging.warning(f"user with {tg_id} updated status to {presence}")
+            logging.warning(f"user with {tg_id} updated status {presence}")
 
     async def subscribe(self, presence: str, tg_id: int):
-        subscribe_query = f"UPDATE faneron_users SET presence = '{presence}' WHERE tg_id = {tg_id}"
+        subscribe_query = f'''UPDATE faneron_users SET presence = '{presence}' WHERE tg_id = {tg_id}'''
         await self._execute_query(subscribe_query)
         logging.warning(f"user with {tg_id} subscribe to the newsletter")
 
     async def delete_user(self, tg_id: int):
-        delete_query = f"DELETE FROM faneron_users WHERE tg_id = {tg_id}"
+        delete_query = f'''DELETE FROM faneron_users WHERE tg_id = {tg_id}'''
         await self._execute_query(delete_query)
         logging.warning(f"user with {tg_id} deleted")
 

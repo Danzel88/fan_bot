@@ -1,6 +1,8 @@
 import asyncio
+import logging
 import os
 import time
+import datetime
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
@@ -14,6 +16,15 @@ presence = ["Оставить отзыв", "Подписаться на ново
 person_role = ["Гость", "Спикер", "Организатор"]
 age_interval = ["16-20", "21-25", "26-30", "31-35", "36-40", "40-50", "50+"]
 city = ["Москва", "Другой"]
+formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
+            '(%(filename)s:%(lineno)s)'
+logging.basicConfig(
+    filename=f'log/bot-from-'
+             f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
+    filemode='w',
+    format=formatter,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.WARNING)
 
 
 class FaneronUsers(StatesGroup):
@@ -56,7 +67,7 @@ async def init_user(message: types.Message):
             await message.answer(f'{msg.review_already_exists}',
                                  reply_markup=types.ReplyKeyboardRemove())
             return
-    await message.answer(f"{msg.grete}", reply_markup=keyboard)
+    await message.answer(f"{msg.grete}")
     await asyncio.sleep(1.0)
     await message.answer(f"{msg.atention_about_reviw}", reply_markup=keyboard)
     await FaneronUsers.waiting_for_presence_accept.set()
@@ -115,7 +126,7 @@ async def process_city(message: types.Message, state: FSMContext):
 
 async def write_db_user_data(state: FSMContext):
     user_data = await state.get_data()
-    await db.update_user(presence=user_data["presence"], person_role=user_data["role"],
+    await db.update_user(presence=user_data['presence'], person_role=user_data["role"],
                          age=user_data["age"], city=user_data["city"],
                          review=user_data["review"], tg_id=user_data["tg_id"])
 
@@ -144,9 +155,11 @@ async def process_photo(message: types.Message, state: FSMContext):
     photo_name = f"{message.from_user.id}"
     if await photo_counter(message.from_user.id):
         await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}-1.jpg")
+        logging.warning(f"user {message.from_user.id} add photo")
         await state.finish()
         return
     await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}.jpg")
+    logging.warning(f"user {message.from_user.id} add photo")
 
 
 async def photo_counter(tg_id: int):
