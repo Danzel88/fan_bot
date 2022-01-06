@@ -69,7 +69,9 @@ async def init_user(message: types.Message):
             return
     await message.answer(f"{msg.grete}")
     await asyncio.sleep(1.0)
-    await message.answer(f"{msg.atention_about_reviw}", reply_markup=keyboard)
+    await message.answer(f"{msg.attention_about_review}")
+    await asyncio.sleep(1.0)
+    await message.answer(f"{msg.promo_code}", reply_markup=keyboard)
     await FaneronUsers.waiting_for_presence_accept.set()
     await db.create_user(tg_id=int(message.from_user.id))
 
@@ -172,7 +174,7 @@ async def photo_counter(tg_id: int):
 async def spam_process(message: types.Message, state: FSMContext):
     await message.answer(f'{msg.spam_handler}', parse_mode="HTML")
     await asyncio.sleep(1.0)
-    await message.answer(f'{msg.troble_shuting}', parse_mode="HTML")
+    await message.answer(f'{msg.trouble_shutting}', parse_mode="HTML")
 
 
 def register_faneron_users_handler(dp: Dispatcher):
