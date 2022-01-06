@@ -140,6 +140,7 @@ async def process_review(message: types.Message, state: FSMContext):
             await process_photo(message, state)
             return
         else:
+            await asyncio.sleep(1.0)
             await process_photo(message, state)
             await state.update_data(review=message.caption)
             await state.update_data(tg_id=message.from_user.id)
@@ -149,7 +150,7 @@ async def process_review(message: types.Message, state: FSMContext):
         await state.update_data(tg_id=message.from_user.id)
         await write_db_user_data(state)
     await message.answer(f"{msg.final_msg}")
-    await FaneronUsers.next()
+    await FaneronUsers.waiting_photo.set()
 
 
 async def process_photo(message: types.Message, state: FSMContext):
@@ -157,7 +158,7 @@ async def process_photo(message: types.Message, state: FSMContext):
     photo_name = f"{message.from_user.id}"
     if await photo_counter(message.from_user.id):
         await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}-1.jpg")
-        logging.warning(f"user {message.from_user.id} add photo")
+        logging.warning(f"user {message.from_user.id} add second photo")
         await state.finish()
         return
     await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}.jpg")
@@ -167,8 +168,9 @@ async def process_photo(message: types.Message, state: FSMContext):
 async def photo_counter(tg_id: int):
     photo_dir = f"{os.getcwd()}/photos"
     photo_name = f"{tg_id}"
-    res = os.path.exists(f"{photo_dir}/{photo_name}/{photo_name}.jpg")
-    return res
+    if os.path.exists(f"{photo_dir}/{photo_name}/{photo_name}.jpg"):
+        return True
+    return False
 
 
 async def spam_process(message: types.Message, state: FSMContext):
