@@ -16,15 +16,15 @@ presence = ["Оставить отзыв", "Подписаться на ново
 person_role = ["Гость", "Спикер", "Организатор"]
 age_interval = ["16-20", "21-25", "26-30", "31-35", "36-40", "40-50", "50+"]
 city = ["Москва", "Другой"]
-formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
-            '(%(filename)s:%(lineno)s)'
-logging.basicConfig(
-    filename=f'log/bot-from-'
-             f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.WARNING)
+# formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
+#             '(%(filename)s:%(lineno)s)'
+# logging.basicConfig(
+#     filename=f'log/bot-from-'
+#              f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
+#     filemode='w',
+#     format=formatter,
+#     datefmt='%Y-%m-%d %H:%M:%S',
+#     level=logging.WARNING)
 
 
 class FaneronUsers(StatesGroup):
@@ -150,27 +150,18 @@ async def process_review(message: types.Message, state: FSMContext):
         await state.update_data(tg_id=message.from_user.id)
         await write_db_user_data(state)
     await message.answer(f"{msg.final_msg}")
-    await FaneronUsers.waiting_photo.set()
+    await FaneronUsers.next()
 
 
 async def process_photo(message: types.Message, state: FSMContext):
     photo_dir = f"{os.getcwd()}/photos"
     photo_name = f"{message.from_user.id}"
-    if await photo_counter(message.from_user.id):
-        await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}-1.jpg")
-        logging.warning(f"user {message.from_user.id} add second photo")
+    await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}_{datetime.datetime.now().time()}.jpg")
+    if len(os.listdir(f"{photo_dir}/{photo_name}")) >= 30:
+        await message.answer(f"{msg.photo_limit}")
         await state.finish()
         return
-    await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}.jpg")
     logging.warning(f"user {message.from_user.id} add photo")
-
-
-async def photo_counter(tg_id: int):
-    photo_dir = f"{os.getcwd()}/photos"
-    photo_name = f"{tg_id}"
-    if os.path.exists(f"{photo_dir}/{photo_name}/{photo_name}.jpg"):
-        return True
-    return False
 
 
 async def spam_process(message: types.Message, state: FSMContext):
