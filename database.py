@@ -24,6 +24,7 @@ class Database:
         logging.warning("Database connection established")
 
     def create_db(self):
+        """Создаем базу"""
         connection = sqlite3.connect(f'{self.name}.db')
         logging.warning('Database created')
         cursor = connection.cursor()
@@ -38,6 +39,7 @@ class Database:
         );''')
 
     def connection(self):
+        """Конектимся к БД. Если БД нет - создаем её"""
         db_path = os.path.join(os.getcwd(), f'{self.name}.db')
         if not os.path.exists(db_path):
             self.create_db()
@@ -55,8 +57,9 @@ class Database:
         cursor.close()
 
     async def create_user(self, tg_id: int):
-        insert_query = f'''INSERT INTO faneron_users (tg_id) VALUES ({tg_id})'''
-        await self._execute_query(insert_query)
+        insert_query = '''INSERT INTO faneron_users (tg_id) VALUES (?)'''
+        val = (tg_id,)
+        await self.execute_update(insert_query, val)
         logging.warning(f"user {tg_id} added to DB")
 
     async def select_user(self, tg_id: int):
@@ -88,22 +91,11 @@ class Database:
                           age: str = None, city: str = None, review: str = None, tg_id: int = None):
         update_query = '''UPDATE faneron_users SET presence = ?, person_role = ?, age = ?, city = ?, review = ? WHERE tg_id = ?'''
         val = (presence, person_role, age, city, review, tg_id)
-        # await self._execute_query(update_query)
         await self.execute_update(update_query, val)
         if review:
             logging.warning(f'user with {tg_id} add review')
         else:
             logging.warning(f"user with {tg_id} updated status {presence}")
-
-    async def subscribe(self, presence: str, tg_id: int):
-        subscribe_query = f'''UPDATE faneron_users SET presence = '{presence}' WHERE tg_id = {tg_id}'''
-        await self._execute_query(subscribe_query)
-        logging.warning(f"user with {tg_id} subscribe to the newsletter")
-
-    async def delete_user(self, tg_id: int):
-        delete_query = f'''DELETE FROM faneron_users WHERE tg_id = {tg_id}'''
-        await self._execute_query(delete_query)
-        logging.warning(f"user with {tg_id} deleted")
 
 
 database = Database(config.tg_bot.db_name)

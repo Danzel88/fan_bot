@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import time
 import datetime
 
 from aiogram import Dispatcher, types
@@ -14,17 +13,15 @@ from dialogs import msg
 
 presence = ["Оставить отзыв", "Подписаться на новости"]
 person_role = ["Гость", "Спикер", "Организатор"]
-age_interval = ["16-20", "21-25", "26-30", "31-35", "36-40", "40-50", "50+"]
-city = ["Москва", "Другой"]
-# formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
-#             '(%(filename)s:%(lineno)s)'
-# logging.basicConfig(
-#     filename=f'log/bot-from-'
-#              f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
-#     filemode='w',
-#     format=formatter,
-#     datefmt='%Y-%m-%d %H:%M:%S',
-#     level=logging.WARNING)
+formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
+            '(%(filename)s:%(lineno)s)'
+logging.basicConfig(
+    filename=f'log/bot-from-'
+             f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
+    filemode='w',
+    format=formatter,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.WARNING)
 
 
 class FaneronUsers(StatesGroup):
@@ -37,6 +34,12 @@ class FaneronUsers(StatesGroup):
 
 
 async def init_user(message: types.Message):
+    """Инициализация пользователя в БД. Создаем в запусь с tg_id.
+    В условиях проверяем есть ли пользователь в БД. Если есть проверяем оставлял ли он уже отзыв.
+    Все эти проверки нужны для того, что бы в случае перезапуска бота, юзер был где то на промежуточном стэйте,
+    можно было ему сказать о необходимости перезапустить свою инициализацию
+
+    Отправляем приветственные сообщения"""
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for pres in presence:
         keyboard.add(pres)
@@ -77,6 +80,7 @@ async def init_user(message: types.Message):
 
 
 async def process_presence(message: types.Message, state: FSMContext):
+    """Получаем от юзера его статус (Подписка на новости или Оставить отзыв)"""
     if message.text not in presence:
         await message.answer(f'{msg.change_on_exists_variable}')
         return
@@ -98,6 +102,7 @@ async def process_presence(message: types.Message, state: FSMContext):
 
 
 async def process_role(message: types.Message, state: FSMContext):
+    """Получеам от пользователя его роль на мероприятии"""
     if message.text not in person_role:
         await message.answer(f'{msg.change_on_exists_variable}')
         return
@@ -107,6 +112,7 @@ async def process_role(message: types.Message, state: FSMContext):
 
 
 async def process_age(message: types.Message, state: FSMContext):
+    """Получем возраст"""
     if message.text.isdigit():
         if int(message.text) > 118:
             await message.answer(f"Ты супер стар. Напиши реальный возраст, это важно!")
@@ -120,6 +126,7 @@ async def process_age(message: types.Message, state: FSMContext):
 
 
 async def process_city(message: types.Message, state: FSMContext):
+    """Получеам город"""
     await state.update_data(city=message.text)
     await FaneronUsers.next()
     await message.answer(f'{msg.get_review_and_message}',
@@ -127,6 +134,7 @@ async def process_city(message: types.Message, state: FSMContext):
 
 
 async def write_db_user_data(state: FSMContext):
+    """Пишем в БД полученные данные (статус, роль, возраст, город, ревью)"""
     user_data = await state.get_data()
     await db.update_user(presence=user_data['presence'], person_role=user_data["role"],
                          age=user_data["age"], city=user_data["city"],
@@ -134,6 +142,7 @@ async def write_db_user_data(state: FSMContext):
 
 
 async def process_review(message: types.Message, state: FSMContext):
+    """Получем текст отзыва и фотографии. В Зависимости от контекста сообщения запускаем обработку медиа из сообщения"""
     if message.photo:
         if not message.caption:
             await asyncio.sleep(1.0)
@@ -154,6 +163,7 @@ async def process_review(message: types.Message, state: FSMContext):
 
 
 async def process_photo(message: types.Message, state: FSMContext):
+    """Обработчик фотографий. Сохраняем фото с уникальным именем. Огарничение 30 фото от одного пользователя"""
     photo_dir = f"{os.getcwd()}/photos"
     photo_name = f"{message.from_user.id}"
     await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}_{datetime.datetime.now().time()}.jpg")
@@ -165,6 +175,8 @@ async def process_photo(message: types.Message, state: FSMContext):
 
 
 async def spam_process(message: types.Message, state: FSMContext):
+    """Обработка сообщений отправленных после отзыва и фото... или до отзыва... или где то в середине, короче отлов
+    спама"""
     await message.answer(f'{msg.spam_handler}', parse_mode="HTML")
     await asyncio.sleep(1.0)
     await message.answer(f'{msg.trouble_shutting}', parse_mode="HTML")
