@@ -11,13 +11,13 @@ from handlers.sender import register_sender
 
 
 formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
-logging.basicConfig(
+# logging.basicConfig(
     # TODO раскомментировать на сервере
-    filename=f'/log/bot-from-{datetime.datetime.now().date()}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.WARNING)
+    # filename=f'/log/bot-from-{datetime.datetime.now().date()}.log',
+    # filemode='w',
+    # format=formatter,
+    # datefmt='%Y-%m-%d %H:%M:%S',
+    # level=logging.WARNING)
 
 
 async def on_shutdown(dp):
