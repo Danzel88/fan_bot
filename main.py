@@ -1,6 +1,3 @@
-import logging
-import datetime
-
 from aiogram import executor
 
 from bot import dp, config
@@ -9,26 +6,18 @@ from handlers.event_guest import register_faneron_users_handler
 from database import database as db
 from handlers.sender import register_sender
 
-
-formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
-# logging.basicConfig(
-    # TODO раскомментировать на сервере
-    # filename=f'/log/bot-from-{datetime.datetime.now().date()}.log',
-    # filemode='w',
-    # format=formatter,
-    # datefmt='%Y-%m-%d %H:%M:%S',
-    # level=logging.WARNING)
+from config.loger import loger
 
 
 async def on_shutdown(dp):
-    logging.warning("Shutting down..")
+    loger.warning("Shutting down..")
     db._conn.close()
-    logging.warning("DB Connection closed")
+    loger.warning("DB Connection closed")
 
 
 async def on_startup(dp):
     db.connection()
-    logging.error('Starting bot')
+    loger.error('Starting bot')
 
 
 if __name__ == '__main__':

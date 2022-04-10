@@ -1,7 +1,5 @@
 import asyncio
-import datetime
 import json
-import logging
 
 from aiogram import types
 from aiogram.dispatcher.filters import IDFilter
@@ -13,16 +11,7 @@ from bot import bot, config
 from database import database as db
 from dialogs import msg
 
-
-formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
-
-logging.basicConfig(
-    filename=f'/log/bot-from-{datetime.datetime.now().date()}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.WARNING
-)
+from config.loger import loger
 
 
 class Sender(StatesGroup):
@@ -54,32 +43,32 @@ async def send_message(message: types.Message,
             await bot.send_photo(chat_id=user_id, photo=message.photo[-1].file_id, caption=message.caption,
                                  disable_notification=disable_notification, parse_mode="HTML")
     except exceptions.BotBlocked:
-        logging.error(f"Target [ID:{user_id}]: blocked by user")
+        loger.error(f"Target [ID:{user_id}]: blocked by user")
     except exceptions.ChatNotFound:
-        logging.error(f"Target [ID:{user_id}]: invalid user ID")
+        loger.error(f"Target [ID:{user_id}]: invalid user ID")
     except exceptions.RetryAfter as e:
-        logging.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
+        loger.error(f"Target [ID:{user_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
         await asyncio.sleep(e.timeout)
         return await send_message(user_id=user_id, message=message)
     except exceptions.UserDeactivated:
-        logging.error(f"Target [ID:{user_id}]: user is deactivated")
+        loger.error(f"Target [ID:{user_id}]: user is deactivated")
     except exceptions.TelegramAPIError:
-        logging.warning(f"Target [ID:{user_id}]: failed")
+        loger.warning(f"Target [ID:{user_id}]: failed")
     else:
-        logging.warning(f"Target [ID:{user_id}]: success.")
+        loger.warning(f"Target [ID:{user_id}]: success.")
         return True
     return False
 
 
 async def test_sender(message: types.Message, state: FSMContext):
     """тестовая рассылка. Сообщение придет только админу"""
-    logging.warning(f'Запуск тестовой рассылки')
+    loger.warning(f'Запуск тестовой рассылки')
     sent_message = {}
     try:
         await send_message(user_id=config.tg_bot.admin_id, message=message)
         sent_message[message.from_user.id] = message.message_id + 1
     except IndexError:
-        logging.error(f'нет пользователей для отправки')
+        loger.error(f'нет пользователей для отправки')
     finally:
         await message.answer(f'Номер рассылки для удаления {int(message.message_id) + 1}')
         await state.finish()
@@ -92,7 +81,7 @@ async def start_spam(message: types.Message, state: FSMContext):
     tg_id: message_id, (дампим в json с именем message_id первого отпавленного сообщения, админ получит
     ответом этот номер) что бы иметь возможность удалить потом рассылку (для этого нужно указывать id чата,
     он же tg_id и message_id) message_id инкерентируюем +1 с каждым следующим отправленным сообщением"""
-    logging.warning(f'Запущена рассылка')
+    loger.warning(f'Запущена рассылка')
     all_users = await db.get_all_users()
     users_list = tuple(zip(*all_users))
     count = 0
@@ -104,11 +93,11 @@ async def start_spam(message: types.Message, state: FSMContext):
                 count += 1
             await asyncio.sleep(.05)
     except IndexError:
-        logging.error(f'нет пользователей для отправки')
+        loger.error(f'нет пользователей для отправки')
     finally:
         await message.answer(f'Номер рассылки для удаления {int(message.message_id) + 1}')
         await state.finish()
-        logging.warning(f'{count} сообщений отправлено')
+        loger.warning(f'{count} сообщений отправлено')
         with open(f"sender_data/{message.message_id + 1}.json", 'w') as f:
             json.dump(sent_message, f)
 
@@ -117,7 +106,7 @@ async def del_init(message: types.Message):
     """инициализация удаления рассылки"""
     await message.answer(f'Пришли номер рассылки которую нужно удалить')
     await Sender.waiting_message_id.set()
-    logging.warning(f'Пользователем {message.from_user.id} запущено удаление рассылки')
+    loger.warning(f'Пользователем {message.from_user.id} запущено удаление рассылки')
 
 
 async def delete_send_message(message: types.Message, state: FSMContext):
@@ -129,7 +118,7 @@ async def delete_send_message(message: types.Message, state: FSMContext):
         await bot.delete_message(chat_id=k, message_id=data[k])
     await asyncio.sleep(0.5)
     await state.finish()
-    logging.warning(f'Рассылка {message.text} удалена')
+    loger.warning(f'Рассылка {message.text} удалена')
 
 
 def register_sender(dp: Dispatcher, admin_id: int):
