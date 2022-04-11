@@ -56,30 +56,26 @@ async def process_name(message: types.Message, state: FSMContext):
 
 async def process_done_project(message: types.Message, state: FSMContext):
     await state.update_data(done_project=message.text)
+    await state.update_data(service_list=[])
     await SurAgencyClient.next()
     await message.answer(msg.service_list, reply_markup=inline_kb)
     await message.answer("После выбора услуг нужно подтвердить ", reply_markup=inline_accept_kb)
 
 
-async def process_service_list(state: FSMContext, data: list):
-    # await SurAgencyClient.next()
-    await state.update_data(service_list=data)
-
-
 async def callback_handler(callback: types.CallbackQuery, state: FSMContext):
-    #TODO ДОписать appen к списку услуг
-    await callback.answer("Запомнил")
-    service_list = []
-    await process_service_list(state, service_list)
+    async with state.proxy() as data:
+        s = services[callback.data]
+        if s in data['service_list']:
+            await callback.answer("Уже выбрана", show_alert=True)
+        else:
+            await callback.answer("Запомнил")
+            data['service_list'].append(services[callback.data])
 
 
-async def accept_callback_handler(callback: types.CallbackQuery, state: FSMContext):
-    #TODO дописать nextstate
+async def accept_callback_handler(callback: types.CallbackQuery):
     await callback.answer(" ")
-    data = await state.get_data()
-    print(data['company_name'], data['position'], data['name'],
-          data['done_project'], data['service_list'])
     await SurAgencyClient.next()
+    await callback.message.answer(msg.manager_name)
 
 
 def register_faneron_users_handler(dp: Dispatcher):
