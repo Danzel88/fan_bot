@@ -1,8 +1,4 @@
-import asyncio
-import logging
-import os
-import datetime
-import typing
+from asyncio import sleep
 
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
@@ -11,12 +7,10 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from database import database as db
 from dialogs import msg, services
-from keyboard import inline_kb, inline_accept_kb
-
+from keyboard import greet_markup
 
 presence = ["Оставить отзыв", "Подписаться на новости"]
 person_role = ["Гость", "Спикер", "Организатор"]
-
 
 
 class SurAgencyClient(StatesGroup):
@@ -32,7 +26,9 @@ class SurAgencyClient(StatesGroup):
 
 
 async def init_user(message: types.Message):
-    await message.answer(msg.company_name)
+    await message.answer(msg.greete)
+    await sleep(1)
+    await message.answer(msg.greete_continues, reply_markup=greet_markup)
     await SurAgencyClient.waiting_for_company_name.set()
 
 
