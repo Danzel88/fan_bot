@@ -2,7 +2,7 @@ from aiogram import executor
 
 from bot import dp, config
 from handlers.common import register_handlers_common
-from handlers.event_guest import register_faneron_users_handler
+from handlers.event_guest import register_sur_client_handler
 from database import database as db
 from handlers.sender import register_sender
 
@@ -22,6 +22,6 @@ async def on_startup(dp):
 
 if __name__ == '__main__':
     register_sender(dp=dp, admin_id=config.tg_bot.admin_id)
-    register_faneron_users_handler(dp)
+    register_sur_client_handler(dp)
     register_handlers_common(dp)
     executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)

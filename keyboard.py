@@ -15,8 +15,25 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 #                                        inline_h, inline_i, inline_j)
 # inline_accept_kb = InlineKeyboardMarkup(row_width=1).add(inline_accept)
 
-
-
+#greet
 soulful_bot = KeyboardButton("И тебе привет, бот с душой")
 angry_client = KeyboardButton("Мне срочно нужно выговориться")
+#managers names
+Olga = KeyboardButton("Ольга")
+Mariya = KeyboardButton("Мария")
+Karina = KeyboardButton("Карина")
+ALina = KeyboardButton("Алина")
+#managers_rating
+fire = KeyboardButton("🔥 Огненно и зажигательно")
+ok = KeyboardButton("👌 В целом все нормально")
+so_so = KeyboardButton("🗿 Ну такое. Я лучше опишу")
+badly = KeyboardButton("😔 Р — разочарование")
+#comon_rating
+you_cool = "Конечно! Вы шикарны в работе и общении"
+middling = "Я подумаю. А что еще вы умеете?"
+shit = "Точно нет! Оставлю отзыв и пойду к психологу "
+
 greet_markup = ReplyKeyboardMarkup(resize_keyboard=True).add(soulful_bot).add(angry_client)
+managers = ReplyKeyboardMarkup(resize_keyboard=True).add(Olga, Mariya).add(Karina, ALina)
+managers_rating = ReplyKeyboardMarkup(resize_keyboard=True).add(fire).add(ok).add(so_so).add(badly)
+common_rating = ReplyKeyboardMarkup(resize_keyboard=True).add(you_cool).add(middling).add(shit)
