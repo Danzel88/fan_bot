@@ -59,5 +59,11 @@ class Database:
         user = self._execute_query(select_query, val, select=True)
         return user
 
+    def get_all_client(self):
+        select_query = '''SELECT * from sur_agency'''
+        cursor = self._conn.cursor()
+        all_client = cursor.execute(select_query)
+        return all_client
+
 
 database = Database(config.tg_bot.db_name)
