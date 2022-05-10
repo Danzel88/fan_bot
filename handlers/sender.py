@@ -24,10 +24,12 @@ class Sender(StatesGroup):
 async def init_sender_state(message: types.Message):
     """инициализация рассылки"""
     if message.text == "/test_sender":
-        await message.answer(f'{msg.message_for_test_sender}', parse_mode="HTML", reply_markup=types.ReplyKeyboardRemove())
+        await message.answer(f'{msg.message_for_test_sender}',
+                             parse_mode="HTML", reply_markup=types.ReplyKeyboardRemove())
         await Sender.waiting_message_from_admin_to_test_mailing.set()
         return
-    await message.answer(f'{msg.message_for_sender}', parse_mode="HTML", reply_markup=types.ReplyKeyboardRemove())
+    await message.answer(f'{msg.message_for_sender}', parse_mode="HTML",
+                         reply_markup=types.ReplyKeyboardRemove())
     await Sender.waiting_message_from_admin.set()
 
 

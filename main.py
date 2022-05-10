@@ -12,6 +12,8 @@ from config.loger import loger
 async def on_shutdown(dp):
     loger.warning("Shutting down..")
     db._conn.close()
+    await dp.storage.close()
+    await dp.storage.wait_closed()
     loger.warning("DB Connection closed")
 
 
