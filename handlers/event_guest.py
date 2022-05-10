@@ -89,7 +89,7 @@ async def process_review_text(message: types.Message, state: FSMContext):
 async def process_common_rating(message: types.Message, state: FSMContext):
     await state.update_data(return_probability=message.text)
     await state.update_data(tg_id=message.from_user.id)
-    pres = open('sender_data/SUR Agency.pdf', 'rb')
+    pres = open('sender_data/SUR_Agency.pdf', 'rb')
     if message.text == keyboard.you_cool:
         await message.answer(msg.you_cool_answer, reply_markup=ReplyKeyboardRemove())
     elif message.text == keyboard.middling:
