@@ -2,4 +2,5 @@ venv/
 __pycache__/
 .idea/
 config/bot.ini
-log/
+log/*.log
+database/*.db
