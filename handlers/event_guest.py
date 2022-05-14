@@ -1,5 +1,5 @@
 import asyncio
-import logging
+# import logging
 import os
 import datetime
 
@@ -7,21 +7,13 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
+from config.loger import loger
 from database import database as db
 from dialogs import msg
 
 
 presence = ["Оставить отзыв", "Подписаться на новости"]
 person_role = ["Гость", "Спикер", "Организатор"]
-formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
-            '(%(filename)s:%(lineno)s)'
-logging.basicConfig(
-    filename=f'log/bot-from-'
-             f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.WARNING)
 
 
 class FaneronUsers(StatesGroup):
@@ -76,7 +68,6 @@ async def init_user(message: types.Message):
     await asyncio.sleep(1.0)
     await message.answer(f"{msg.promo_code}", reply_markup=keyboard)
     await FaneronUsers.waiting_for_presence_accept.set()
-    await db.create_user(tg_id=int(message.from_user.id))
 
 
 async def process_presence(message: types.Message, state: FSMContext):
@@ -91,13 +82,12 @@ async def process_presence(message: types.Message, state: FSMContext):
     if message.text == presence[1]:
         accept_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
         accept_kb.add(presence[0])
-        await db.create_or_update_user(presence=message.text, tg_id=message.from_user.id)
+        await db.create_user(presence=message.text, tg_id=message.from_user.id)
         await message.answer(
             f'{msg.subscribe_answer}',
             reply_markup=accept_kb)
         return
     await FaneronUsers.next()
-    await db.create_or_update_user(presence=message.text, tg_id=message.from_user.id)
     await message.answer(f"{msg.change_role}", reply_markup=keyboard)
 
 
@@ -134,11 +124,9 @@ async def process_city(message: types.Message, state: FSMContext):
 
 
 async def write_db_user_data(state: FSMContext):
-    """Пишем в БД полученные данные (статус, роль, возраст, город, ревью)"""
+    """Пишем в БД полученные данные (статус, роль, возраст, город, ревью, id_телеги)"""
     user_data = await state.get_data()
-    await db.update_user(presence=user_data['presence'], person_role=user_data["role"],
-                         age=user_data["age"], city=user_data["city"],
-                         review=user_data["review"], tg_id=user_data["tg_id"])
+    await db.writer(user_data)
 
 
 async def process_review(message: types.Message, state: FSMContext):
@@ -167,11 +155,11 @@ async def process_photo(message: types.Message, state: FSMContext):
     photo_dir = f"{os.getcwd()}/photos"
     photo_name = f"{message.from_user.id}"
     await message.photo[-1].download(destination_file=f"{photo_dir}/{photo_name}/{photo_name}_{datetime.datetime.now().time()}.jpg")
-    if len(os.listdir(f"{photo_dir}/{photo_name}")) >= 30:
+    if len(os.listdir(f"{photo_dir}/{photo_name}")) >= 10:
         await message.answer(f"{msg.photo_limit}")
         await state.finish()
         return
-    logging.warning(f"user {message.from_user.id} add photo")
+    loger.warning(f"user {message.from_user.id} add photo")
 
 
 async def spam_process(message: types.Message, state: FSMContext):
@@ -179,7 +167,7 @@ async def spam_process(message: types.Message, state: FSMContext):
     спама"""
     await message.answer(f'{msg.spam_handler}', parse_mode="HTML")
     await asyncio.sleep(1.0)
-    await message.answer(f'{msg.trouble_shutting}', parse_mode="HTML")
+    # await message.answer(f'{msg.trouble_shutting}', parse_mode="HTML")
 
 
 def register_faneron_users_handler(dp: Dispatcher):
