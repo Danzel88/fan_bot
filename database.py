@@ -1,21 +1,10 @@
-import datetime
 import os
 import sqlite3
-# import logging
 from config.loger import loger
 from config_reader import load_config
 
 
-config = load_config("config/bot.ini")
-# formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
-#             '(%(filename)s:%(lineno)s)'
-# logging.basicConfig(
-#     filename=f'log/bot-from-'
-#              f'{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.log',
-#     filemode='w',
-#     format=formatter,
-#     datefmt='%Y-%m-%d %H:%M:%S',
-#     level=logging.WARNING)
+configs = load_config("config/bot.ini")
 
 
 class Database:
@@ -123,4 +112,5 @@ class Database:
             return
         await self._execute_query2(create_query, val)
 
-database = Database(config.tg_bot.db_name)
+
+database = Database(configs.tg_bot.db_name)

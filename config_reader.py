@@ -7,7 +7,8 @@ class TgBot:
     token: str
     admin_id: int
     db_name: str
-    # photo_limit: int
+    CREDENTIAL_FILE: str
+    spreadsheet_id: str
 
 
 @dataclass
@@ -21,6 +22,8 @@ def load_config(path: str):
 
     tg_bot = config["tg_bot"]
 
-    return Config(tg_bot=TgBot(token=tg_bot["token"],
-                               admin_id=int(tg_bot["admin_id"]),
-                               db_name=tg_bot['db_name']))
+    return Config(tg_bot=TgBot(token=tg_bot['token'],
+                               admin_id=int(tg_bot['admin_id']),
+                               db_name=tg_bot['db_name'],
+                               CREDENTIAL_FILE=tg_bot['CREDENTIAL_FILE'],
+                               spreadsheet_id=tg_bot['spreadsheet_id']))
