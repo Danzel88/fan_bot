@@ -6,7 +6,7 @@ import pandas as pd
 import shutil
 import os
 import sqlite3
-from sheet_writer import writer
+from sheet_writer import writer, create_new_sheet
 
 source_db = '/home/den/code/fan_bot/databases/faneron.db'
 dst_path = '/home/den/code/fan_bot/user_data_for_analize/'
@@ -40,7 +40,7 @@ def copy_db(source, dst):
 def db_to_excel(db_path):
     conn = sqlite3.connect(db_path)
     df = pd.read_sql('select * from faneron_users', conn)
-    df.to_excel(f'{dst_path}all_users{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
+    df.to_excel(f'{dst_path}all_users_{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
                 index=False)
     files = os.listdir(dst_path)
     return files[-1]
@@ -49,7 +49,9 @@ def db_to_excel(db_path):
 def review_process(file):
     df = pd.read_excel(f'/home/den/code/fan_bot/user_data_for_analize/{file}')
     df = df.fillna('')
-    writer(values=df.values.tolist(), sheet_name=file)
+    gid_name = create_new_sheet(sheet_name=file)
+
+    writer(values=df.values.tolist(), gid_name=gid_name)
 
 
 def main():
