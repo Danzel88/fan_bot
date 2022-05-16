@@ -21,7 +21,7 @@ class Database:
         cursor.execute('''CREATE TABLE faneron_users(
         id INTEGER PRIMARY KEY,
         presence VARCHAR(25),
-        person_role VARCHAR(12),
+        event_place VARCHAR(12),
         age VARCHAR(5),
         city VARCHAR (7),
         review TEXT,
@@ -90,10 +90,10 @@ class Database:
         self._conn.commit()
         cur.close()
 
-    async def update_user(self, presence: str = None, person_role: str = None,
+    async def update_user(self, presence: str = None, event_place: str = None,
                           age: str = None, city: str = None, review: str = None, tg_id: int = None):
-        update_query = '''UPDATE faneron_users SET presence = ?, person_role = ?, age = ?, city = ?, review = ? WHERE tg_id = ?'''
-        val = (presence, person_role, age, city, review, tg_id)
+        update_query = '''UPDATE faneron_users SET presence = ?, event_place = ?, age = ?, city = ?, review = ? WHERE tg_id = ?'''
+        val = (presence, event_place, age, city, review, tg_id)
         await self.execute_update(update_query, val)
         if review:
             loger.warning(f'user with {tg_id} add review')
@@ -101,13 +101,13 @@ class Database:
             loger.warning(f"user with {tg_id} updated status {presence}")
 
     async def writer(self, data: dict):
-        val = (data["presence"], data["role"],
+        val = (data["presence"], data["event_place"],
                data["age"], data["city"],
                data["review"], int(data["tg_id"]),)
-        create_query = '''INSERT into faneron_users (presence, person_role, 
+        create_query = '''INSERT into faneron_users (presence, event_place, 
         age, city, review, tg_id) VALUES (?,?,?,?,?,?)'''
         if await self.select_user(data["tg_id"]):
-            update_query = '''UPDATE faneron_users SET presence = ?, person_role = ?, age = ?, city = ?, review = ? WHERE tg_id = ?'''
+            update_query = '''UPDATE faneron_users SET presence = ?, event_place = ?, age = ?, city = ?, review = ? WHERE tg_id = ?'''
             await self._execute_query2(update_query, val)
             return
         await self._execute_query2(create_query, val)

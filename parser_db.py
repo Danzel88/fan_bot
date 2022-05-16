@@ -1,5 +1,6 @@
 import datetime
 import logging
+from time import sleep
 
 import pandas as pd
 import shutil
@@ -39,14 +40,16 @@ def copy_db(source, dst):
 def db_to_excel(db_path):
     conn = sqlite3.connect(db_path)
     df = pd.read_sql('select * from faneron_users', conn)
-    df.to_excel(f'{dst_path}all_users.xlsx',
+    df.to_excel(f'{dst_path}all_users{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
                 index=False)
+    files = os.listdir(dst_path)
+    return files[-1]
 
 
-def review_process():
-    df = pd.read_excel('/home/den/code/fan_bot/user_data_for_analize/all_users.xlsx')
+def review_process(file):
+    df = pd.read_excel(f'/home/den/code/fan_bot/user_data_for_analize/{file}')
     df = df.fillna('')
-    writer(df.values.tolist())
+    writer(values=df.values.tolist(), sheet_name=file)
 
 
 def main():
@@ -54,8 +57,9 @@ def main():
     logging.warning(res)
     if res:
         logging.warning('copeid')
-        db_to_excel(f"{dst_path}faneron.db")
-        review_process()
+        file_name = db_to_excel(f"{dst_path}faneron.db")
+        sleep(1)
+        review_process(file_name)
     else:
         logging.warning("source for parse not found")
 
