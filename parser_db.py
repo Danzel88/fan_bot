@@ -72,10 +72,13 @@ def main():
     c1 = main_db_df.shape[0]
     c2 = backup_db_df.shape[0]
     if c1 > c2:
-        df = get_data_from_db(source_db, lst_id=c2)
-        files_names = db_to_excel(df)
-        review_process(files_names)
-        copy_db(source_db, dst_path)
+        try:
+            df = get_data_from_db(source_db, lst_id=c2)
+            files_names = db_to_excel(df)
+            review_process(files_names)
+            copy_db(source_db, dst_path)
+        except Exception as e:
+            logging.error(e)
     else:
         logging.warning(f"{datetime.datetime.now().date} Нет новых отзывов")
 
