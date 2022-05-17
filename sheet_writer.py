@@ -20,7 +20,8 @@ def create_new_sheet(sheet_name: str):
         'requests': [{
             'addSheet': {
                 'properties': {
-                    'title': '_'.join(sheet_name.split('_')[2:5]),
+                    # 'title': '_'.join(sheet_name.split('_')[2:5]),
+                    'title': sheet_name,
                     "gridProperties": {
                         "rowCount": 300,
                         "columnCount": 7
