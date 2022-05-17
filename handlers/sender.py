@@ -123,14 +123,17 @@ async def del_init(message: types.Message):
 async def delete_send_message(message: types.Message, state: FSMContext):
     """Метод получем номер рассылки, по этому имени получет json файл и из каждого чата удаяет сообщение с
     соответсвующим id. Как формируется это файл описано в start_spam"""
-    with open(f'sender_data/{message.text}.json') as f:
-        data = json.load(f)
-    for k in data:
-        await bot.delete_message(chat_id=k, message_id=data[k])
-    await asyncio.sleep(0.5)
-    await state.finish()
-    logging.warning(f'Рассылка {message.text} удалена')
-
+    try:
+        with open(f'sender_data/{message.text}.json') as f:
+            data = json.load(f)
+        for k in data:
+            await bot.delete_message(chat_id=k, message_id=data[k])
+        await asyncio.sleep(0.5)
+        await state.finish()
+        logging.warning(f'Рассылка {message.text} удалена')
+    except FileNotFoundError:
+        logging.warning(f'Mailing number {message.text} not found')
+        await message.answer("Нет рассылки с таким номером")
 
 def register_sender(dp: Dispatcher, admin_id: int):
     dp.register_message_handler(init_sender_state, IDFilter(user_id=admin_id), commands="sender", state="*")
