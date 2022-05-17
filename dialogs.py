@@ -11,8 +11,8 @@ class Messages:
                       "на сайте и получи 50% скидку."
     change_event_place: str = "Расскажи, где ты был?"
     change_age_interval: str = "Сколько тебе лет?"
-    change_city: str = "Напиши из какого ты города?"
-    get_review_and_message: str = "Напиши, что тебя впечатлило." \
+    change_city: str = "Напиши, из какого ты города?"
+    get_review_and_message: str = "Напиши, что тебя больше всего впечатлило?" \
 
     final_msg: str = "Спасибо за отзыв и за то, что побывал в нашей метавселенной. " \
                      "Присоединяйся к Фанерону в " \
