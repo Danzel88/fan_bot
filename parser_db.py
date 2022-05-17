@@ -55,6 +55,7 @@ def db_to_excel(df):
     df.to_excel(f'{dst_path}all_users_{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
                 index=False)
     files = os.listdir(dst_path)
+
     return files
 
 
@@ -80,7 +81,7 @@ def main():
         except Exception as e:
             logging.error(e)
     else:
-        logging.warning(f"{datetime.datetime.now().date} Нет новых отзывов")
+        logging.warning(f"{datetime.datetime.now().date()} Нет новых отзывов")
 
 
 if __name__ == '__main__':
