@@ -76,6 +76,7 @@ def main():
         try:
             df = get_data_from_db(source_db, lst_id=c2)
             files_names = db_to_excel(df)
+            sleep(2)
             review_process(files_names)
             copy_db(source_db, dst_path)
         except Exception as e:
