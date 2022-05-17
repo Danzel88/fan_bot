@@ -60,7 +60,7 @@ def db_to_excel(df):
 
 
 def review_process(files):
-    file = files[-1]
+    file = files[0]
     df = pd.read_excel(f'/home/den/code/fan_bot/user_data_for_analize/{file}')
     df = df.fillna('')
     gid_name = create_new_sheet(sheet_name=file)
