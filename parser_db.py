@@ -37,11 +37,6 @@ def copy_db(source, dst):
         os.makedirs(f'{dst}')
 
 
-def count_file_length(file):
-    lst_id = pd.read_excel(f'{dst_path}{file}').shape[0]
-    return lst_id
-
-
 def get_data_from_db(db_path, lst_id=None):
     conn = sqlite3.connect(db_path)
     if lst_id:
@@ -55,32 +50,32 @@ def db_to_excel(df):
     df.to_excel(f'{dst_path}all_users_{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
                 index=False)
     files = os.listdir(dst_path)
-
     return files
 
 
 def review_process(files):
-    file = files[0]
-    df = pd.read_excel(f'/home/den/code/fan_bot/user_data_for_analize/{file}')
+    file = files[-1]
+    df = pd.read_excel(f'/home/den/code/fan_bot/user_data_for_analize/{file}',)
     df = df.fillna('')
     gid_name = create_new_sheet(sheet_name=file)
     writer(values=df.values.tolist(), gid_name=gid_name)
 
 
 def main():
-    main_db_df = get_data_from_db(source_db)
-    backup_db_df = get_data_from_db(f"{dst_path}faneron.db")
+    main_db_df = get_data_from_db('/home/den/code/fan_bot/databases/faneron.db')
+    backup_db_df = get_data_from_db('/home/den/code/fan_bot/user_data_for_analize/faneron.db')
     c1 = main_db_df.shape[0]
     c2 = backup_db_df.shape[0]
     if c1 > c2:
-        try:
-            df = get_data_from_db(source_db, lst_id=c2)
-            files_names = db_to_excel(df)
-            sleep(2)
-            review_process(files_names)
-            copy_db(source_db, dst_path)
-        except Exception as e:
-            logging.error(e)
+        # try:
+        df = get_data_from_db(source_db, lst_id=c2)
+        files_names = db_to_excel(df)
+
+        review_process(files_names)
+        copy_db(source_db, dst_path)
+        # except Exception as e:
+        #     print(e)
+        #     logging.error(e)
     else:
         logging.warning(f"{datetime.datetime.now().date()} Нет новых отзывов")
 
