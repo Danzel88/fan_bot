@@ -54,7 +54,7 @@ def df_to_excel(df):
     df.to_excel(f'{dst_path}all_users_{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.xlsx',
                 index=False)
     files = os.listdir(dst_path)
-    return files[-1]
+    return files[-2]
 
 
 def check_backup_db(db_path):
