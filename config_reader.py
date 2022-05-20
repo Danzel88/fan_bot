@@ -9,6 +9,7 @@ class TgBot:
     db_name: str
     CREDENTIAL_FILE: str
     spreadsheet_id: str
+    mailing_db_name: str
 
 
 @dataclass
@@ -26,4 +27,5 @@ def load_config(path: str):
                                admin_id=int(tg_bot['admin_id']),
                                db_name=tg_bot['db_name'],
                                CREDENTIAL_FILE=tg_bot['CREDENTIAL_FILE'],
-                               spreadsheet_id=tg_bot['spreadsheet_id']))
+                               spreadsheet_id=tg_bot['spreadsheet_id'],
+                               mailing_db_name=tg_bot['mailing_db_name']))

@@ -10,7 +10,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.utils import exceptions
 
 from bot import bot, config
-from database import database as db
+from database import mailing_database
 from dialogs import msg
 
 
@@ -93,7 +93,7 @@ async def start_spam(message: types.Message, state: FSMContext):
     ответом этот номер) что бы иметь возможность удалить потом рассылку (для этого нужно указывать id чата,
     он же tg_id и message_id) message_id инкерентируюем +1 с каждым следующим отправленным сообщением"""
     logging.warning(f'Запущена рассылка')
-    all_users = await db.get_all_users()
+    all_users = await mailing_database.get_all_users()
     users_list = tuple(zip(*all_users))
     count = 0
     sent_message = {}

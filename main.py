@@ -4,20 +4,22 @@ from bot import dp, config
 from handlers.common import register_handlers_common
 from handlers.event_guest import register_faneron_users_handler
 from config.loger import loger
-from database import database as db
+from database import database, mailing_database
 from handlers.sender import register_sender
 
 
 async def on_shutdown(dp):
     loger.warning("Shutting down..")
-    db._conn.close()
+    database._conn.close()
+    mailing_database.close()
     await dp.storage.close()
     await dp.storage.wait_closed()
     loger.warning("DB Connection closed")
 
 
 async def on_startup(dp):
-    db.connection()
+    database.connection()
+    mailing_database.connection()
     loger.error('Starting bot')
 
 

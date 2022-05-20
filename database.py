@@ -8,10 +8,10 @@ configs = load_config("config/bot.ini")
 
 
 class Database:
-    def __init__(self, name):
+    def __init__(self, name=None):
         self.name = name
         self._conn = self.connection()
-        loger.warning("Database connection established")
+        loger.warning(f"Database connection {self.name} established")
 
     def create_db(self):
         """Создаем базу"""
@@ -57,11 +57,15 @@ class Database:
             self._conn.commit()
         cursor.close()
 
-    async def create_user(self, presence:str, tg_id: int):
-        insert_query = '''INSERT INTO faneron_users (presence, tg_id) VALUES (?,?)'''
-        val = (presence, tg_id,)
-        await self.execute_update(insert_query, val)
-        loger.warning(f"user {tg_id} added to DB")
+    async def create_user(self, tg_id: int):
+        try:
+            insert_query = '''INSERT INTO users_for_mailing (tg_id) VALUES (?)'''
+            val = (tg_id,)
+            await self.execute_update(insert_query, val)
+            loger.warning(f"user {tg_id} added to mailing_db")
+        except Exception:
+            loger.warning(f"User try restart bot, but user "
+                          f"{tg_id} already exists in mailing list")
 
     async def select_user(self, tg_id: int):
         select_query = f'''SELECT * FROM faneron_users WHERE tg_id = {tg_id}'''
@@ -69,7 +73,7 @@ class Database:
         return record
 
     async def get_all_users(self):
-        get_query = f'''SELECT tg_id FROM faneron_users;'''
+        get_query = f'''SELECT tg_id FROM users_for_mailing;'''
         cursor = self._conn.cursor()
         all_users = cursor.execute(get_query).fetchall()
         return all_users
@@ -114,3 +118,4 @@ class Database:
 
 
 database = Database(configs.tg_bot.db_name)
+mailing_database = Database(configs.tg_bot.mailing_db_name)

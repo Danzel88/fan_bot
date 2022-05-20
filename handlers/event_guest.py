@@ -6,12 +6,14 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
+from config_reader import load_config
 from database import database as db
+from database import mailing_database
 from dialogs import msg, reply_start
-
 
 presence = ["Оставить отзыв"]
 event_place = ["Экспозиция", "Лаборатория", "Оба пространства"]
+configs = load_config("config/bot.ini")
 
 
 class FaneronUsers(StatesGroup):
@@ -33,6 +35,7 @@ async def init_user(message: types.Message, state: FSMContext):
     accept_kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     accept_kb.add(presence[0])
     user_state = await state.get_state()
+    await mailing_database.create_user(message.from_user.id)
     try:
         user_data = await db.select_user(message.from_user.id)
         int(user_data[0])
