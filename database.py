@@ -14,7 +14,7 @@ class Database:
 
     def create_db(self):
         """Создаем базу"""
-        connection = sqlite3.connect(f'{self.name}.db')
+        connection = sqlite3.connect(self.name)
         loger.warning('Database created')
         cursor = connection.cursor()
         cursor.execute('''CREATE TABLE sur_agency(
@@ -30,10 +30,10 @@ class Database:
 
     def connection(self):
         """Конектимся к БД. Если БД нет - создаем её"""
-        db_path = os.path.join(os.getcwd(), f'{self.name}.db')
+        db_path = os.path.join(os.getcwd(), self.name)
         if not os.path.exists(db_path):
             self.create_db()
-        return sqlite3.connect(f'{self.name}.db')
+        return sqlite3.connect(self.name)
 
     def _execute_query(self, query, val, select=False):
         cursor = self._conn.cursor()
@@ -66,4 +66,4 @@ class Database:
         return all_client
 
 
-database = Database(config.tg_bot.db_name)
+database = Database(config.tg_bot.db_path)
