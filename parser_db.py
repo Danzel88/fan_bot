@@ -1,38 +1,28 @@
 import datetime
-import logging
-from time import sleep
 
 import pandas as pd
+from pandas.io.sql import DatabaseError
 import shutil
 import os
 import sqlite3
+
+from config.loger import loger
 from sheet_writer import writer, create_new_sheet
 
 source_db = '/home/den/code/fan_bot/databases/faneron.db'
 dst_path = '/home/den/code/fan_bot/user_data_for_analize/'
 
 
-formatter = '[%(asctime)s] %(levelname)8s --- %(message)s ' \
-            '(%(filename)s:%(lineno)s)'
-logging.basicConfig(
-    filename=f'log/parser-from-'
-             f'{datetime.datetime.now().strftime("%Y_%m_%d")}.log',
-    filemode='w',
-    format=formatter,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.WARNING)
-
-
 def copy_db(source, dst):
     """Копируем БД"""
     try:
         shutil.copy(source, dst)
-        logging.warning('Database copied successfully')
+        loger.warning('Database copied successfully')
         os.path.isfile(f'{dst_path}faneron.db')
     except shutil.SameFileError:
-        logging.warning("Source and destination represents the same file.")
+        loger.warning("Source and destination represents the same file.")
     except PermissionError:
-        logging.warning("Permission denied.")
+        loger.warning("Permission denied.")
     except FileNotFoundError:
         os.makedirs(f'{dst}')
 
@@ -72,20 +62,25 @@ def write_to_google_sheet(file):
 
 
 def review_processing(main_db, backup_db):
-    m_db = get_data_from_db(main_db).shape[0]
-    b_db = get_data_from_db(backup_db).shape[0]
-    if m_db > b_db:
-        write_to_google_sheet(df_to_excel(get_data_from_db(main_db, lst_id=b_db)))
-    return
+    try:
+        m_db = get_data_from_db(main_db).shape[0]
+        b_db = get_data_from_db(backup_db).shape[0]
+        if m_db > b_db:
+            write_to_google_sheet(df_to_excel(get_data_from_db(main_db, lst_id=b_db)))
+            return
+    except DatabaseError:
+        write_to_google_sheet(df_to_excel(get_data_from_db(main_db)))
+        loger.warning('First time backup db')
 
 
 def main():
-    if check_backup_db(f'{dst_path}faneron.db'):
+    if not check_backup_db(f'{dst_path}faneron.db'):
         review_processing(source_db, f'{dst_path}faneron.db')
         copy_db(source_db, f'{dst_path}faneron.db')
         return
-    copy_db(source_db, f'{dst_path}faneron.db')
-    review_processing(source_db, f'{dst_path}faneron.db')
+    else:
+        review_processing(source_db, f'{dst_path}faneron.db')
+        copy_db(source_db, f'{dst_path}faneron.db')
 
 
 if __name__ == '__main__':
