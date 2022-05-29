@@ -6,10 +6,11 @@ import shutil
 import os
 import sqlite3
 
+from bot import config
 from config.loger import loger
 from sheet_writer import writer, create_new_sheet
 
-source_db = '/home/den/code/fan_bot/databases/faneron.db'
+source_db = f'/home/den/code/fan_bot/databases/{config.tg_bot.db_name}'
 dst_path = '/home/den/code/fan_bot/user_data_for_analize/'
 
 
@@ -18,7 +19,7 @@ def copy_db(source, dst):
     try:
         shutil.copy(source, dst)
         loger.warning('Database copied successfully')
-        os.path.isfile(f'{dst_path}faneron.db')
+        os.path.isfile(f'{dst_path}{config.tg_bot.db_name}')
     except shutil.SameFileError:
         loger.warning("Source and destination represents the same file.")
     except PermissionError:
@@ -78,8 +79,8 @@ def review_processing(main_db, backup_db):
 
 def main():
     """Выгружаем отзывы в google sheet, бэкапим БД"""
-    review_processing(source_db, f'{dst_path}faneron.db')
-    copy_db(source_db, f'{dst_path}faneron.db')
+    review_processing(source_db, f'{dst_path}{config.tg_bot.db_name}')
+    copy_db(source_db, f'{dst_path}{config.tg_bot.db_name}')
 
 
 if __name__ == '__main__':

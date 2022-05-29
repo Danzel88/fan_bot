@@ -11,7 +11,7 @@ from handlers.sender import register_sender
 async def on_shutdown(dp):
     loger.warning("Shutting down..")
     database._conn.close()
-    mailing_database.close()
+    mailing_database._conn.close()
     await dp.storage.close()
     await dp.storage.wait_closed()
     loger.warning("DB Connection closed")

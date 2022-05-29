@@ -5,7 +5,19 @@ from config_reader import load_config
 
 
 configs = load_config("config/bot.ini")
-
+faneron_users_create = '''CREATE TABLE faneron_users(
+        id INTEGER PRIMARY KEY,
+        presence VARCHAR(25),
+        event_place VARCHAR(12),
+        age VARCHAR(5),
+        city VARCHAR (7),
+        review TEXT,
+        tg_id INTEGER UNIQUE
+        );'''
+mailing_users_create = '''CREATE TABLE users_for_mailing(
+        id INTEGER PRIMARY KEY,
+        tg_id INTEGER UNIQUE
+        );'''
 
 class Database:
     def __init__(self, name=None):
@@ -15,25 +27,18 @@ class Database:
 
     def create_db(self):
         """Создаем базу"""
-        connection = sqlite3.connect(f'{self.name}.db')
+        connection = sqlite3.connect(self.name)
         loger.warning('Database created')
         cursor = connection.cursor()
-        cursor.execute('''CREATE TABLE faneron_users(
-        id INTEGER PRIMARY KEY,
-        presence VARCHAR(25),
-        event_place VARCHAR(12),
-        age VARCHAR(5),
-        city VARCHAR (7),
-        review TEXT,
-        tg_id INTEGER UNIQUE
-        );''')
+        cursor.execute(faneron_users_create)
+        cursor.execute(mailing_users_create)
 
     def connection(self):
         """Конектимся к БД. Если БД нет - создаем её"""
-        db_path = os.path.join(os.getcwd(), f'{self.name}.db')
-        if not os.path.exists(db_path):
+        database_path = os.path.join(os.getcwd(), self.name)
+        if not os.path.exists(database_path):
             self.create_db()
-        return sqlite3.connect(f'{self.name}.db')
+        return sqlite3.connect(self.name)
 
     async def _execute_query(self, query, select=False):
         cursor = self._conn.cursor()
@@ -78,16 +83,6 @@ class Database:
         all_users = cursor.execute(get_query).fetchall()
         return all_users
 
-    #старая реализация метода обновления записи с пользователем в бд
-    #проверить связаность и удалить при рефакторинге
-    # async def create_or_update_user(self, presence: str = None,
-    #                                 tg_id: int = None):
-    #     user_presence = await self.select_user(tg_id)
-    #     if user_presence is not None:
-    #         await self.update_user(presence=presence, tg_id=tg_id)
-    #     else:
-    #         await self.create_user(tg_id=tg_id)
-
     async def execute_update(self, query, val):
         cur = self._conn.cursor()
         cur.execute(query, val)
@@ -117,5 +112,5 @@ class Database:
         await self._execute_query2(create_query, val)
 
 
-database = Database(configs.tg_bot.db_name)
-mailing_database = Database(configs.tg_bot.mailing_db_name)
+database = Database(configs.tg_bot.db_path)
+mailing_database = Database(configs.tg_bot.mailing_db_path)
