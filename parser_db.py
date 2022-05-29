@@ -62,6 +62,9 @@ def write_to_google_sheet(file):
 
 
 def review_processing(main_db, backup_db):
+    """Сравниваем кол-во записей в главной БД и БД из бэкапа, если главная больше,
+    выгружаем в google sheet отзывы новые отзывы из главной. При первом запуске
+    скрипта выгружаем все что есть в гланой и бэкапим БД"""
     try:
         m_db = get_data_from_db(main_db).shape[0]
         b_db = get_data_from_db(backup_db).shape[0]
@@ -74,13 +77,9 @@ def review_processing(main_db, backup_db):
 
 
 def main():
-    if not check_backup_db(f'{dst_path}faneron.db'):
-        review_processing(source_db, f'{dst_path}faneron.db')
-        copy_db(source_db, f'{dst_path}faneron.db')
-        return
-    else:
-        review_processing(source_db, f'{dst_path}faneron.db')
-        copy_db(source_db, f'{dst_path}faneron.db')
+    """Выгружаем отзывы в google sheet, бэкапим БД"""
+    review_processing(source_db, f'{dst_path}faneron.db')
+    copy_db(source_db, f'{dst_path}faneron.db')
 
 
 if __name__ == '__main__':
