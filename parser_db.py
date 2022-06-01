@@ -57,7 +57,7 @@ def check_backup_db(db_path):
 def write_to_google_sheet(file):
     """Запись на новый лист goolge sheet. Листу присваивается имя file
     Имя листа можно изменить в коде writer"""
-    df = pd.read_excel(f'/home/den/code/fan_bot/user_data_for_analize/{file}',)
+    df = pd.read_excel(f'/home/den/code/sur_bot/user_data_for_analize/{file}',)
     df = df.fillna('')
     google_write = GoogleWriter(sheet_name=file, values=df.values.tolist())
     google_write.writer()
