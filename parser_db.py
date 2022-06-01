@@ -11,8 +11,8 @@ from config.loger import loger
 # from sheet_writer import writer, create_new_sheet
 from sheet_writer import GoogleWriter
 
-source_db = f'/home/den/code/fan_bot/databases/{config.tg_bot.db_name}'
-dst_path = '/home/den/code/fan_bot/user_data_for_analize/'
+source_db = f'/home/den/code/sur_bot/databases/{config.tg_bot.db_name}'
+dst_path = '/home/den/code/sur_bot/user_data_for_analize/'
 
 
 def copy_db(source, dst):
