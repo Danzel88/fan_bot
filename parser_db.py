@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import pandas as pd
 from pandas.io.sql import DatabaseError
@@ -7,26 +8,32 @@ import os
 import sqlite3
 
 from bot import config
-from config.loger import loger
+# from config.loger import loger
 from sheet_writer import GoogleWriter
 
 source_db = f'/home/den/code/sur_bot/databases/{config.tg_bot.db_name}'
 dst_path = '/home/den/code/sur_bot/user_data_for_analize/'
 
-loger.basicConfig(
-    filename=f'./log/parser-from-{datetime.datetime.now().date()}.log'
-)
+
+formatter = '[%(asctime)s] %(levelname)8s --- %(message)s (%(filename)s:%(lineno)s)'
+logging.basicConfig(
+    filename=f'./log/pasr-from-{datetime.datetime.now().date()}.log',
+    filemode='w',
+    format=formatter,
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.WARNING)
+
 
 def copy_db(source, dst):
     """Копируем БД"""
     try:
         shutil.copy(source, dst)
-        loger.warning('Database copied successfully')
+        logging.warning('Database copied successfully')
         os.path.isfile(f'{dst_path}{config.tg_bot.db_name}')
     except shutil.SameFileError:
-        loger.warning("Source and destination represents the same file.")
+        logging.warning("Source and destination represents the same file.")
     except PermissionError:
-        loger.warning("Permission denied.")
+        logging.warning("Permission denied.")
     except FileNotFoundError:
         os.makedirs(f'{dst}')
 
@@ -77,10 +84,13 @@ def review_processing(main_db, backup_db):
         b_db = get_data_from_db(backup_db).shape[0]
         if m_db > b_db:
             write_to_google_sheet(df_to_excel(get_data_from_db(main_db, lst_id=b_db)))
+            logging.warning('New review upload')
             return
+        else:
+            logging.warning('Not found new review')
     except DatabaseError:
         write_to_google_sheet(df_to_excel(get_data_from_db(main_db)))
-        loger.warning('First time backup db')
+        logging.warning('First time backup db')
 
 
 def main():
