@@ -8,7 +8,6 @@ import sqlite3
 
 from bot import config
 from config.loger import loger
-# from sheet_writer import writer, create_new_sheet
 from sheet_writer import GoogleWriter
 
 source_db = f'/home/den/code/sur_bot/databases/{config.tg_bot.db_name}'
