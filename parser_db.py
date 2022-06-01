@@ -80,10 +80,8 @@ def review_processing(main_db, backup_db):
     выгружаем в google sheet отзывы новые отзывы из главной. При первом запуске
     скрипта выгружаем все что есть в гланой и бэкапим БД"""
     try:
-        m_db = get_data_from_db(main_db).shape[0]
-        print(m_db)
-        b_db = get_data_from_db(backup_db).shape[0]
-        print(b_db)
+        m_db = get_data_from_db(main_db).iloc[-1]['id']
+        b_db = get_data_from_db(backup_db).iloc[-1]['id']
         if m_db > b_db:
             write_to_google_sheet(df_to_excel(get_data_from_db(main_db, lst_id=b_db)))
             logging.warning('New review upload')
