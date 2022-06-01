@@ -13,6 +13,9 @@ from sheet_writer import GoogleWriter
 source_db = f'/home/den/code/sur_bot/databases/{config.tg_bot.db_name}'
 dst_path = '/home/den/code/sur_bot/user_data_for_analize/'
 
+loger.basicConfig(
+    filename=f'./log/parser-from-{datetime.datetime.now().date()}.log'
+)
 
 def copy_db(source, dst):
     """Копируем БД"""
